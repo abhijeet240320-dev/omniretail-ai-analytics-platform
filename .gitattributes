@@ -1,0 +1,30 @@
+# Normalise line endings in the repository, not in the working tree.
+#
+# WHY THIS IS NOT OPTIONAL HERE
+# -----------------------------
+# This project measures and hashes its own committed files:
+# `data/raw/_checksums.json` records a SHA-256 per raw file, the data-truth
+# audit quotes the byte size of each documentation file, and
+# `backend/tests/test_powerbi_artifacts.py` fails if the Power BI artefacts
+# contain a non-ASCII character.
+#
+# With `core.autocrlf=true` (the Windows default), a checkout rewrites LF to
+# CRLF. Every tracked file then has a different byte count from the one the
+# documentation was generated against, on the machine that produced it and on
+# every machine after it. A commit that cannot reproduce the numbers written
+# beside it is a defect in a project whose whole premise is reproducibility.
+#
+# `text=auto eol=lf` means: normalise to LF in the repository, check out with
+# LF everywhere including Windows. Nothing in this project needs CRLF -
+# Python, TypeScript, SQL, DAX, Markdown and JSON are all happier with LF.
+
+* text=auto eol=lf
+
+# Binary, never touched. There are none committed today (the .pbix is not in
+# this repository), but the rule belongs here so that adding one later does not
+# silently corrupt it.
+*.pbix binary
+*.png binary
+*.jpg binary
+*.zip binary
+*.gz binary
