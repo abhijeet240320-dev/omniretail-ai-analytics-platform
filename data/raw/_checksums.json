@@ -1,0 +1,147 @@
+{
+  "dataco/DataCoSupplyChainDataset.csv": {
+    "bytes": 95729629,
+    "sha256": "994b3c8d24049cc46bf20e8161fedece9a9b95376cc0dc929921d76cf6b9bc0d",
+    "source_url": "https://raw.githubusercontent.com/ashishpatel26/DataCo-SMART-SUPPLY-CHAIN-FOR-BIG-DATA-ANALYSIS/main/DataCoSupplyChainDataset.csv"
+  },
+  "dataco/DescriptionDataCoSupplyChain.csv": {
+    "bytes": 3391,
+    "sha256": "1812b786861128b67c88dd979379b124915b43da099e0617a34c11d4daea03b7",
+    "source_url": "https://raw.githubusercontent.com/ashishpatel26/DataCo-SMART-SUPPLY-CHAIN-FOR-BIG-DATA-ANALYSIS/main/DescriptionDataCoSupplyChain.csv"
+  },
+  "dunnhumby/campaign_desc.csv": {
+    "bytes": 540,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "632535c6bcdd97b5681e84c2c0652ddc4eaca8a0f899a3bb37dae8dbdc089684",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/campaign_table.csv": {
+    "bytes": 95874,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "a716f88953c9ddf8847e191d862e8d022afd19cf7419f52cbe6dde950a121f21",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/causal_data.csv": {
+    "bytes": 695858427,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "60ed7021fefc209c0caf36fcf95d1e93693775acfdac01fc9ee38273da88937a",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/coupon.csv": {
+    "bytes": 2822804,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "718f4d466df8a54bbff45f340e0b601049721b0715503394a601bac3093c727d",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/coupon_redempt.csv": {
+    "bytes": 54108,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "70a98f3bfb28be0dd850f19c8d806d2a23e44014546651367b21538db6fba1f8",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/dunnhumby - The Complete Journey User Guide.pdf": {
+    "bytes": 970346,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "5a8f89ac4fce70dc69d083f03dadf33e9c5ba3c995de7bf2830b18dcef3ac61f",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/dunnhumby_The-Complete-Journey.zip": {
+    "bytes": 134716463,
+    "sha256": "5e0a3d72fe8562fe0ab995f70fb58b74359e8ec4bbccd1521e2b137da0558f9a",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/hh_demographic.csv": {
+    "bytes": 43233,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "3764c70d5e38b5da1206ab6d60788236d2b2e31ae3168f6382ed5880a0101123",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/product.csv": {
+    "bytes": 6429896,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "7ecbcec41e0f1e5a51b43a359965cc50dc5586a2b900a378b64032750fedc949",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "dunnhumby/transaction_data.csv": {
+    "bytes": 141742346,
+    "extracted_from": "dunnhumby_The-Complete-Journey.zip",
+    "sha256": "3a685c0729cef664d634486189f774518b84f53cde7cbf701a5963238692b476",
+    "source_url": "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+  },
+  "m5/calendar.csv": {
+    "bytes": 103469,
+    "sha256": "d12b5914ef03e66649adf5dd9e996e6602251c22b7a6af8f1f7e3aa12f8860f5",
+    "source_url": "https://huggingface.co/datasets/kashif/M5/resolve/main/calendar.csv"
+  },
+  "m5/sales_train_evaluation.csv": {
+    "bytes": 121736518,
+    "sha256": "4b4a47c44c38380d2a9168216fea8c9ff2f31b1ddb772f8a0995952a038b8aa0",
+    "source_url": "https://huggingface.co/datasets/kashif/M5/resolve/main/sales_train_evaluation.csv"
+  },
+  "m5/sell_prices.csv": {
+    "bytes": 203395785,
+    "sha256": "9da3ad1f8b8ccacdbdc70612191dd375ec24a4ac6625c24b75b3bc60b0bed2ef",
+    "source_url": "https://huggingface.co/datasets/kashif/M5/resolve/main/sell_prices.csv"
+  },
+  "olist/Geolocation Dataset.zip": {
+    "bytes": 15757127,
+    "sha256": "b5a004dbb871a63b5293c03a8bf7de54db82529b30f4011a651d8219431614d4",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/Geolocation%20Dataset.zip"
+  },
+  "olist/olist_closed_deals_dataset.csv": {
+    "bytes": 171352,
+    "sha256": "1433f402d8fff00ca167579de641d9525f6e846368958c166f699ef1b0c31f3d",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_closed_deals_dataset.csv"
+  },
+  "olist/olist_customers_dataset.csv": {
+    "bytes": 9033957,
+    "sha256": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_customers_dataset.csv"
+  },
+  "olist/olist_geolocation_dataset.csv": {
+    "bytes": 61273883,
+    "extracted_from": "Geolocation Dataset.zip",
+    "sha256": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/Geolocation%20Dataset.zip"
+  },
+  "olist/olist_marketing_qualified_leads_dataset.csv": {
+    "bytes": 703836,
+    "sha256": "5537753b7549ce4068e52e2402c29f2773c5375fc0575520ae8f3f301f666573",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_marketing_qualified_leads_dataset.csv"
+  },
+  "olist/olist_order_items_dataset.csv": {
+    "bytes": 15438671,
+    "sha256": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_items_dataset.csv"
+  },
+  "olist/olist_order_payments_dataset.csv": {
+    "bytes": 5777138,
+    "sha256": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_payments_dataset.csv"
+  },
+  "olist/olist_order_reviews_dataset.csv": {
+    "bytes": 14451670,
+    "sha256": "012b61c7593e34f51fa614efdf802b9c7056ce6aae5307ddb93236e7cfc797d7",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_reviews_dataset.csv"
+  },
+  "olist/olist_orders_dataset.csv": {
+    "bytes": 17654914,
+    "sha256": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_orders_dataset.csv"
+  },
+  "olist/olist_products_dataset.csv": {
+    "bytes": 2379446,
+    "sha256": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_products_dataset.csv"
+  },
+  "olist/olist_sellers_dataset.csv": {
+    "bytes": 174703,
+    "sha256": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_sellers_dataset.csv"
+  },
+  "olist/product_category_name_translation.csv": {
+    "bytes": 2729,
+    "sha256": "80b25e95fc4a0860f9026db18c35e590949da5b3cd15f947f52ddab122058418",
+    "source_url": "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/product_category_name_translation.csv"
+  }
+}

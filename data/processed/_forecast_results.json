@@ -1,0 +1,241 @@
+{
+  "generated_utc": "2026-10-03T19:34:14.936840+00:00",
+  "dataset": "m5.sales_long",
+  "scope": {
+    "series_evaluated": 30490,
+    "series_total_in_database": 30490,
+    "days_loaded": 1941,
+    "is_full_dataset": true
+  },
+  "split": {
+    "train_d_num": "1..1913",
+    "test_d_num": "1914..1941",
+    "test_days": 28,
+    "rationale": "The 28-day test window matches the 28 forecast-horizon days in m5.calendar, so the model is scored on the length of job it would actually do."
+  },
+  "intermittency": {
+    "sporadic (>=80% zeros)": {
+      "series": 11783,
+      "zero_rate_range": [
+        0.8,
+        1.0
+      ]
+    },
+    "intermittent (40-80%)": {
+      "series": 14582,
+      "zero_rate_range": [
+        0.4,
+        0.8
+      ]
+    },
+    "frequent (<40%)": {
+      "series": 4125,
+      "zero_rate_range": [
+        0.0,
+        0.4
+      ]
+    }
+  },
+  "models": {
+    "naive": {
+      "model": "naive",
+      "description": "Repeat the last observed value for every horizon day.",
+      "MAE": 1.373,
+      "RMSE": 2.8936,
+      "MASE": 2.0521,
+      "WMAPE": 0.9516,
+      "bias": 0.1903,
+      "total_actual": 1231764.0,
+      "total_forecast": 1394260.0
+    },
+    "sma_7": {
+      "model": "sma_7",
+      "description": "Mean of the last 7 observed days, held flat.",
+      "MAE": 1.0683,
+      "RMSE": 2.2487,
+      "MASE": 1.6717,
+      "WMAPE": 0.7404,
+      "bias": -0.1062,
+      "total_actual": 1231764.0,
+      "total_forecast": 1141116.0
+    },
+    "seasonal_naive_7": {
+      "model": "seasonal_naive_7",
+      "description": "Repeat the value from one week earlier (weekly cycle).",
+      "MAE": 1.244,
+      "RMSE": 2.6769,
+      "MASE": 1.8695,
+      "WMAPE": 0.8622,
+      "bias": -0.1062,
+      "total_actual": 1231764.0,
+      "total_forecast": 1141116.0
+    },
+    "croston": {
+      "model": "croston",
+      "description": "Croston: separate running estimates of demand size and inter-demand interval, updated only on non-zero days.",
+      "MAE": 1.2628,
+      "RMSE": 3.2197,
+      "MASE": 1.7012,
+      "WMAPE": 0.8752,
+      "bias": -0.8587,
+      "total_actual": 1231764.0,
+      "total_forecast": 498633.2
+    },
+    "sbF": {
+      "model": "sbF",
+      "description": "Syntetos-Boylan bias-corrected Croston: Croston's rate multiplied by (1 - alpha/2) to offset the optimism from ignoring in-interval zeros.",
+      "MAE": 1.2692,
+      "RMSE": 3.2465,
+      "MASE": 1.6966,
+      "WMAPE": 0.8797,
+      "bias": -0.888,
+      "total_actual": 1231764.0,
+      "total_forecast": 473701.5
+    }
+  },
+  "model_descriptions": {
+    "naive": "Repeat the last observed value for every horizon day.",
+    "sma_7": "Mean of the last 7 observed days, held flat.",
+    "seasonal_naive_7": "Repeat the value from one week earlier (weekly cycle).",
+    "croston": "Croston: separate running estimates of demand size and inter-demand interval, updated only on non-zero days.",
+    "sbF": "Syntetos-Boylan bias-corrected Croston: Croston's rate multiplied by (1 - alpha/2) to offset the optimism from ignoring in-interval zeros."
+  },
+  "per_band": {
+    "naive": {
+      "sporadic (>=80% zeros)": {
+        "MAE": 0.6043694911555388,
+        "RMSE": 1.2696772652531065,
+        "MASE": 2.914585573619251,
+        "WMAPE": 1.3890545322818848,
+        "bias": 0.06231738218498806,
+        "series": 11783
+      },
+      "intermittent (40-80%)": {
+        "MAE": 1.4391642337911712,
+        "RMSE": 2.6294022507948274,
+        "MASE": 1.6078477081260076,
+        "WMAPE": 1.0570431466374046,
+        "bias": 0.195419499578737,
+        "series": 14582
+      },
+      "frequent (<40%)": {
+        "MAE": 3.334813852813853,
+        "RMSE": 5.730750198315909,
+        "MASE": 1.1586985904061617,
+        "WMAPE": 0.7235690495020861,
+        "bias": 0.538069264069264,
+        "series": 4125
+      }
+    },
+    "sma_7": {
+      "sporadic (>=80% zeros)": {
+        "MAE": 0.5054783179502812,
+        "RMSE": 0.9495042290346831,
+        "MASE": 2.4774938923326872,
+        "WMAPE": 1.1617676914441761,
+        "bias": -0.04125798668784328,
+        "series": 11783
+      },
+      "intermittent (40-80%)": {
+        "MAE": 1.1099338994958838,
+        "RMSE": 2.0287995262842498,
+        "MASE": 1.2471876357965643,
+        "WMAPE": 0.8152287238211738,
+        "bias": -0.1116322471932128,
+        "series": 14582
+      },
+      "frequent (<40%)": {
+        "MAE": 2.5287285095856524,
+        "RMSE": 4.499995327421472,
+        "MASE": 0.8703792614009898,
+        "WMAPE": 0.5486692106025177,
+        "bias": -0.2723549783549784,
+        "series": 4125
+      }
+    },
+    "seasonal_naive_7": {
+      "sporadic (>=80% zeros)": {
+        "MAE": 0.5544246553751773,
+        "RMSE": 1.1824605370851917,
+        "MASE": 2.677588220949477,
+        "WMAPE": 1.274263660935715,
+        "bias": -0.04125798668784326,
+        "series": 11783
+      },
+      "intermittent (40-80%)": {
+        "MAE": 1.301773713188471,
+        "RMSE": 2.453876801004385,
+        "MASE": 1.448642819472033,
+        "WMAPE": 0.9561320033459556,
+        "bias": -0.11163224719321277,
+        "series": 14582
+      },
+      "frequent (<40%)": {
+        "MAE": 3.009324675324675,
+        "RMSE": 5.261717494855743,
+        "MASE": 1.049286898183912,
+        "WMAPE": 0.6529462485981203,
+        "bias": -0.27235497835497835,
+        "series": 4125
+      }
+    },
+    "croston": {
+      "sporadic (>=80% zeros)": {
+        "MAE": 0.5016401105182187,
+        "RMSE": 1.0582598840946613,
+        "MASE": 2.38366435501116,
+        "WMAPE": 1.152946135248229,
+        "bias": -0.20756110320585303,
+        "series": 11783
+      },
+      "intermittent (40-80%)": {
+        "MAE": 1.247670628352927,
+        "RMSE": 2.637632481564711,
+        "MASE": 1.3209588662089016,
+        "WMAPE": 0.9163941515465811,
+        "bias": -0.7890445992288203,
+        "series": 14582
+      },
+      "frequent (<40%)": {
+        "MAE": 3.4905452153163345,
+        "RMSE": 6.987950025989608,
+        "MASE": 1.0957452172629898,
+        "WMAPE": 0.757358759787866,
+        "bias": -2.965261209645773,
+        "series": 4125
+      }
+    },
+    "sbF": {
+      "sporadic (>=80% zeros)": {
+        "MAE": 0.4982157917444654,
+        "RMSE": 1.0612890320439181,
+        "MASE": 2.3647217729776524,
+        "WMAPE": 1.1450758413596915,
+        "bias": -0.21893775519023614,
+        "series": 11783
+      },
+      "intermittent (40-80%)": {
+        "MAE": 1.2513462008029506,
+        "RMSE": 2.650042544246074,
+        "MASE": 1.3230867497870211,
+        "WMAPE": 0.9190938008131779,
+        "bias": -0.8176673687775388,
+        "series": 14582
+      },
+      "frequent (<40%)": {
+        "MAE": 3.534670312487663,
+        "RMSE": 7.061443579807907,
+        "MASE": 1.1084236998195705,
+        "WMAPE": 0.7669327738194155,
+        "bias": -3.0474401405054756,
+        "series": 4125
+      }
+    }
+  },
+  "winner_by_mase": "sma_7",
+  "margin_over_runner_up": 0.0147,
+  "elapsed_seconds": {
+    "load": 283.03,
+    "evaluate": 9.05
+  }
+}

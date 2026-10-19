@@ -30,7 +30,7 @@ postmaster.pid
 .mypy_cache/
 .ruff_cache/
 .ipynb_checkpoints/
-.freebuff/
+.vite/
 
 # --- Raw data: large, reproducible, stays on your machine ---
 # We deliberately DO commit data/raw/_checksums.json and

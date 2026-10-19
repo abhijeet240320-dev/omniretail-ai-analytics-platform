@@ -1,0 +1,301 @@
+# =====================================================================
+# OmniRetail AI Analytics Platform - DATASET MANIFEST
+# =====================================================================
+# This file is the single source of truth for "where did our data come
+# from?". Nothing is downloaded unless it is described here, and nothing
+# is loaded into the database unless it passes scripts/data/02_verify.py.
+#
+# RULES ENCODED HERE
+#   * Only real, publicly published datasets. No synthetic generation.
+#   * Every source keeps its own identity. We never pretend the sources
+#     are one company, and we never join on IDs that merely look alike.
+#   * `raw_dir` files are immutable: downloaded once, then hashed.
+#     The SHA-256 in `lockfile` (written after first download) is the
+#     proof-of-integrity we re-check on every later run.
+#
+# `expected_bytes` is what we verified at research time. If a download
+# comes back a different size we FAIL LOUDLY rather than silently
+# analysing the wrong file.
+# =====================================================================
+
+version: 1
+
+# Where raw + processed data live, relative to the repository root.
+paths:
+  raw_root: data/raw
+  processed_root: data/processed
+  lockfile: data/raw/_checksums.json
+
+sources:
+
+  # -------------------------------------------------------------------
+  # A. dunnhumby - "The Complete Journey"
+  # -------------------------------------------------------------------
+  - id: dunnhumby
+    name: "The Complete Journey"
+    publisher: "dunnhumby"
+    domain: "Grocery retail - customer, basket, promotion and direct-marketing analytics"
+    business_purpose: >
+      Household-level grocery transactions for 2,500 frequent shoppers over
+      two years, plus product master data, store data, coupon campaigns and
+      a direct-marketing contact history. This is our CUSTOMER and
+      MARKETING analytics domain: RFM, customer value, basket analysis,
+      promotion effectiveness, coupon redemption and campaign response.
+    homepage: "https://www.dunnhumby.com/source-files/"
+    license: >
+      Published by dunnhumby as an open "Source Files" dataset for teaching,
+      research and hackathons. dunnhumby states the data is "(nearly)
+      real-world" and modelled on real retail patterns rather than being a
+      verbatim extract of a live retailer. See the Source Files terms on the
+      homepage. Redistributed here only as a download pointer, not re-hosted.
+    citation: >
+      dunnhumby. "The Complete Journey." dunnhumby Source Files.
+      https://www.dunnhumby.com/source-files/ (accessed 2026-10-02).
+    acquisition: automatic
+    archive: "dunnhumby_The-Complete-Journey.zip"
+    # One zip, extracted in place. The zip contains the 8 CSV files listed
+    # in `expect_files`. We verify the extracted names, not just the zip.
+    files:
+      - filename: "dunnhumby_The-Complete-Journey.zip"
+        url: "https://downloads.ctfassets.net/psj0p18eh7z1/3e9OAF7F9ONT4pwJc1luEw/d56af8aabad51bdb9888aad0240bd105/dunnhumby_The-Complete-Journey.zip"
+        expected_bytes: 134716463
+        sha256: null          # filled in by the lockfile after first download
+        kind: archive
+        extract: true
+    expect_files:
+      - transaction_data.csv
+      - product.csv
+      - hh_demographic.csv
+      - campaign_desc.csv
+      - campaign_table.csv
+      - coupon.csv
+      - coupon_redempt.csv
+      - causal_data.csv
+    known_limitations: >
+      Not a real retailer's literal ledger: dunnhumby publishes it as a
+      realistic representation. Household IDs are anonymous and cannot be
+      joined to any other dataset. There is no supplier, warehouse or
+      inventory-level data, so this project creates no such tables.
+
+  # -------------------------------------------------------------------
+  # B. DataCo SMART Supply Chain
+  # -------------------------------------------------------------------
+  - id: dataco
+    name: "DataCo SMART Supply Chain for Big Data Analysis"
+    publisher: "DataCo Global / Mendeley Data"
+    domain: "Global supply chain - orders, shipping, profitability, late-delivery risk"
+    business_purpose: >
+      ~180k order lines with order dates, shipping dates, delivery status,
+      late-delivery risk flag, market/region, product category, customer
+      segment, order profit per order and sales. This is our OPERATIONS and
+      SUPPLY-CHAIN domain: delivery performance, late-delivery analysis,
+      regional/market performance and order profitability.
+    homepage: "https://data.mendeley.com/datasets/8gx2fvg2k6/5"
+    license: >
+      Mendeley Data, Constante, F.; Silva, F.; Pereira, A. (2019),
+      "DataCo SMART SUPPLY CHAIN FOR BIG DATA ANALYSIS", Mendeley Data, V5.
+      Distributed for research use under the terms stated on the Mendeley
+      Data record. Check that record for the current licence before
+      redistribution; here we only download it.
+    citation: >
+      Constante, F., Silva, F., Pereira, A. (2019). DataCo SMART SUPPLY
+      CHAIN FOR BIG DATA ANALYSIS. Mendeley Data, V5.
+      doi:10.17632/8gx2fvg2k6.5
+    acquisition: automatic
+    files:
+      # Primary structured table.
+      - filename: "DataCoSupplyChainDataset.csv"
+        url: "https://raw.githubusercontent.com/ashishpatel26/DataCo-SMART-SUPPLY-CHAIN-FOR-BIG-DATA-ANALYSIS/main/DataCoSupplyChainDataset.csv"
+        expected_bytes: 95729629
+        sha256: null
+        kind: csv
+        encoding: latin-1
+      # Field dictionary shipped alongside the dataset. This is the PUBLISHER'S
+      # own column documentation, not data: it has no rows that become a table,
+      # so it is marked kind "doc" to keep the lineage validator's "downloaded
+      # but never used" note meaningful for genuine data files.
+      - filename: "DescriptionDataCoSupplyChain.csv"
+        url: "https://raw.githubusercontent.com/ashishpatel26/DataCo-SMART-SUPPLY-CHAIN-FOR-BIG-DATA-ANALYSIS/main/DescriptionDataCoSupplyChain.csv"
+        expected_bytes: 3391
+        sha256: null
+        kind: doc
+        encoding: latin-1
+    known_limitations: >
+      Column names contain spaces and are title-cased (e.g. "Order Id"),
+      so every downstream query must quote identifiers. Order Id repeats
+      across order lines, so it is NOT a unique key of the raw file.
+      Latitude/Longitude are present but blank in the public release.
+      There is no true warehouse or supplier table - only a
+      "Order Region"/"Market" geography - so we fabricate none.
+
+  # -------------------------------------------------------------------
+  # C. Olist Brazilian E-Commerce
+  # -------------------------------------------------------------------
+  - id: olist
+    name: "Brazilian E-Commerce Public Dataset by Olist"
+    publisher: "Olist (published on Kaggle)"
+    domain: "E-commerce - orders, items, payments, reviews, freight, geography"
+    business_purpose: >
+      99k+ real orders from the Olist marketplace in Brazil (2016-2018)
+      split across 9 relational tables, plus the marketing funnel tables.
+      This is our ECOMMERCE domain: order lifecycle and delivery
+      performance, seller performance, payments, freight, review scores
+      and geographic (state/city) analysis.
+    homepage: "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce"
+    license: >
+      Published by Olist as a public dataset for analysis, under
+      CC BY-NC-SA 4.0 as stated on the Kaggle dataset page. Non-commercial
+      use with attribution. We download from a public GitHub mirror because
+      the Kaggle page requires an authenticated account.
+    citation: >
+      Olist. "Brazilian E-Commerce Public Dataset by Olist." Kaggle.
+      https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
+      (accessed 2026-10-02).
+    acquisition: automatic
+    # NOTE ON PROVENANCE: the Kaggle page needs a logged-in account. We use
+    # the public GitHub mirror below, then VERIFY the data matches the
+    # published shape (row counts, columns, date range). If the verification
+    # script disagrees, the load is aborted - we would rather fail than
+    # analyse an unknown file.
+    mirror: "https://github.com/Ganesh7699/Brazilian-E-Commerce-OList"
+    files:
+      - filename: "olist_orders_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_orders_dataset.csv"
+        expected_bytes: 17654914
+        sha256: null
+        kind: csv
+      - filename: "olist_order_items_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_items_dataset.csv"
+        expected_bytes: 15438671
+        sha256: null
+        kind: csv
+      - filename: "olist_order_payments_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_payments_dataset.csv"
+        expected_bytes: 5777138
+        sha256: null
+        kind: csv
+      - filename: "olist_order_reviews_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_order_reviews_dataset.csv"
+        expected_bytes: 14451670
+        sha256: null
+        kind: csv
+      - filename: "olist_customers_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_customers_dataset.csv"
+        expected_bytes: 9033957
+        sha256: null
+        kind: csv
+      - filename: "olist_products_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_products_dataset.csv"
+        expected_bytes: 2379446
+        sha256: null
+        kind: csv
+      - filename: "olist_sellers_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_sellers_dataset.csv"
+        expected_bytes: 174703
+        sha256: null
+        kind: csv
+      - filename: "product_category_name_translation.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/product_category_name_translation.csv"
+        expected_bytes: 2729
+        sha256: null
+        kind: csv
+      - filename: "olist_marketing_qualified_leads_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_marketing_qualified_leads_dataset.csv"
+        expected_bytes: 703836
+        sha256: null
+        kind: csv
+      - filename: "olist_closed_deals_dataset.csv"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/olist_closed_deals_dataset.csv"
+        expected_bytes: 171352
+        sha256: null
+        kind: csv
+      # Geolocation ships zipped in this mirror (~1M rows, ~15 MB zip).
+      - filename: "Geolocation Dataset.zip"
+        url: "https://raw.githubusercontent.com/Ganesh7699/Brazilian-E-Commerce-OList/main/Geolocation%20Dataset.zip"
+        expected_bytes: 15757127
+        sha256: null
+        kind: archive
+        extract: true
+    expect_files:
+      - olist_geolocation_dataset.csv
+    known_limitations: >
+      Customer IDs in the orders table are per-order, so "repeat customer"
+      analysis must use customer_unique_id. Review rows are not 1:1 with
+      orders. Payments can be split across several rows per order, so
+      summing payment_value per order requires care. Geolocation has many
+      duplicate zip prefixes and is aggregated rather than joined blindly.
+
+  # -------------------------------------------------------------------
+  # D. Walmart M5 Forecasting
+  # -------------------------------------------------------------------
+  - id: m5
+    name: "M5 Forecasting - Accuracy (Walmart)"
+    publisher: "Walmart / Kaggle (Makridakis et al.)"
+    domain: "Demand forecasting - daily unit sales across stores, items and states"
+    business_purpose: >
+      Daily unit sales for 30,490 item-store series across 10 Walmart stores
+      in 3 US states, from 2011-01-29 to 2016-05-22, with a calendar table
+      (events, SNAP days, holidays) and weekly sell prices. This is our
+      FORECASTING domain: hierarchical demand forecasting, seasonality,
+      calendar/event effects and price effects, with proper backtesting.
+    homepage: "https://www.kaggle.com/competitions/m5-forecasting-accuracy"
+    license: >
+      Released by Walmart for the M5 forecasting competition and used widely
+      in academic work (Makridakis, Spiliotis & Assimakopoulos, 2022,
+      International Journal of Forecasting). Kaggle competition rules apply
+      to the competition itself; the data is used here for non-commercial
+      research/portfolio analysis with attribution.
+    citation: >
+      Makridakis, S., Spiliotis, E., Assimakopoulos, V. (2022). "M5 accuracy
+      competition: Results, findings, and conclusions." International
+      Journal of Forecasting, 38(4), 1346-1364.
+      Data: Kaggle, "M5 Forecasting - Accuracy", Walmart.
+    acquisition: automatic
+    mirror: "https://huggingface.co/datasets/kashif/M5"
+    files:
+      - filename: "calendar.csv"
+        url: "https://huggingface.co/datasets/kashif/M5/resolve/main/calendar.csv"
+        expected_bytes: 103469
+        sha256: null
+        kind: csv
+      - filename: "sales_train_evaluation.csv"
+        url: "https://huggingface.co/datasets/kashif/M5/resolve/main/sales_train_evaluation.csv"
+        expected_bytes: 121736518
+        sha256: null
+        kind: csv
+      - filename: "sell_prices.csv"
+        url: "https://huggingface.co/datasets/kashif/M5/resolve/main/sell_prices.csv"
+        expected_bytes: 203395785
+        sha256: null
+        kind: csv
+    known_limitations: >
+      The sales file is WIDE: one row per item-store and one column per day
+      (d_1..d_1941). It must be melted to a long (date, item, store, sales)
+      shape before SQL or modelling, which is a real data-engineering step.
+      IDs (item_id, store_id) are Walmart-specific and have no meaning in
+      any other dataset - joining them to Olist or dunnhumby would be a
+      fabrication, so we never do it. Daily sales are integer units, not
+      revenue; prices are weekly, so "revenue" is an estimate and is
+      labelled as such.
+
+  # -------------------------------------------------------------------
+  # E. RetailRocket - deliberately NOT selected (see docs/data_sources.md)
+  # -------------------------------------------------------------------
+  - id: retailrocket
+    name: "RetailRocket E-commerce Dataset"
+    publisher: "RetailRocket"
+    domain: "Online behaviour - views, add-to-cart, transactions (event stream)"
+    business_purpose: >
+      NOT INCLUDED. Evaluated and rejected: it is an anonymised event
+      stream with no product names, no prices, no revenue and no customer
+      attributes, and it overlaps heavily with Olist for e-commerce
+      analytics. Adding it would enlarge the project without adding a new
+      analytical capability, which our own selection rule forbids.
+    homepage: "https://www.kaggle.com/datasets/retailrocket/ecommerce-dataset"
+    license: "See Kaggle dataset page."
+    citation: "RetailRocket. E-commerce Dataset. Kaggle."
+    acquisition: not_selected
+    files: []
+    known_limitations: >
+      Rejected at the research stage, before any download, precisely so we
+      do not accumulate datasets without purpose.

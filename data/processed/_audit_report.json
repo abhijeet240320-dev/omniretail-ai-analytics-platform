@@ -1,0 +1,1779 @@
+{
+  "ai_controls": [
+    {
+      "control": "read-only role cannot write",
+      "enforced_today": true,
+      "evidence": "omniretail_readonly holds only ['SELECT'] on all 30 tables",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "every forbidden statement is refused by the server",
+      "enforced_today": true,
+      "evidence": "9/9 statements (INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE, GRANT, REVOKE) refused by PostgreSQL itself",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "every session for the AI role starts read-only",
+      "enforced_today": true,
+      "evidence": "ALTER ROLE omniretail_readonly SET default_transaction_read_only = on (role level, setdatabase=0). Even if the application forgot to set it, the session cannot write.",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "read-only role cannot create objects",
+      "enforced_today": true,
+      "evidence": "omniretail_readonly holds no CREATE on any source schema",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "analytics execution is transactionally read-only",
+      "enforced_today": true,
+      "evidence": "run_analytics.py sets READ ONLY; this audit's own session reports transaction_read_only=on",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "write-statement rejection for generated SQL",
+      "enforced_today": true,
+      "evidence": "found: ['backend/app/ai/sql_validator.py']",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "documented figures checked against query results",
+      "enforced_today": true,
+      "evidence": "test_analytics_findings.py fails the build when a documented number is absent from the recorded query results",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "cross-source joins are impossible in the schema",
+      "enforced_today": true,
+      "evidence": "15 foreign keys, 0 crossing a schema boundary; enforced by pg_constraint AND by test_no_model_relationship_crosses_a_source",
+      "must_be_enforced_when": true
+    },
+    {
+      "control": "RAG corpus contains column-level data dictionary",
+      "enforced_today": true,
+      "evidence": "docs/data_dictionary.md (11,985 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains source -> raw -> processed -> database lineage",
+      "enforced_today": true,
+      "evidence": "docs/data_lineage.md (36,017 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains verified findings with traceable queries",
+      "enforced_today": true,
+      "evidence": "docs/sql_analytics.md (107,149 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains schema layout, roles, ownership rules",
+      "enforced_today": true,
+      "evidence": "docs/database.md (13,343 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains machine-readable query results",
+      "enforced_today": true,
+      "evidence": "data/processed/_sql_results.json (137,973 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains independent integrity verdicts",
+      "enforced_today": true,
+      "evidence": "data/processed/_verify_report.json (22,543 bytes)",
+      "must_be_enforced_when": false
+    },
+    {
+      "control": "RAG corpus contains source file provenance",
+      "enforced_today": true,
+      "evidence": "data/raw/_checksums.json (8,440 bytes)",
+      "must_be_enforced_when": false
+    }
+  ],
+  "ai_data_truth_readiness": {
+    "controls_enforced": 15,
+    "controls_not_yet_enforced": [],
+    "controls_total": 15,
+    "verdict": "PASS"
+  },
+  "coded_temporal_ranges": {
+    "dunnhumby.promo_exposure.week_no": {
+      "max": 101,
+      "min": 9
+    },
+    "dunnhumby.transactions.day": {
+      "max": 711,
+      "min": 1
+    },
+    "dunnhumby.transactions.week_no": {
+      "max": 102,
+      "min": 1
+    },
+    "m5.sales_long.d_num": {
+      "max": 1941,
+      "min": 1
+    },
+    "m5.sales_long.d_num->date": {
+      "max": "2016-05-22T00:00:00",
+      "min": "2011-01-29T00:00:00"
+    },
+    "m5.sell_prices.wm_yr_wk": {
+      "max": 11621,
+      "min": 11101
+    }
+  },
+  "data_integrity": {
+    "by_classification": {
+      "documented_transformation": 1,
+      "known_grain_fanout": 1,
+      "legitimate_repeat": 1,
+      "source_property": 5,
+      "unverified": 1,
+      "warning": 3
+    },
+    "defects": 0,
+    "notes": 5,
+    "rows_audited": 106704583,
+    "tables_audited": 30,
+    "verdict": "PASS WITH WARNINGS",
+    "warnings": 7
+  },
+  "elapsed_seconds": 574.5,
+  "fanout": [
+    {
+      "child_rows": 99224,
+      "distinct_child_keys": 98673,
+      "join": "olist.reviews -> olist.orders",
+      "rows_per_key": 1.0056
+    },
+    {
+      "child_rows": 112650,
+      "distinct_child_keys": 98666,
+      "join": "olist.order_items -> olist.orders",
+      "rows_per_key": 1.1417
+    },
+    {
+      "child_rows": 112650,
+      "distinct_child_keys": 32951,
+      "join": "olist.order_items -> olist.products",
+      "rows_per_key": 3.4187
+    },
+    {
+      "child_rows": 99441,
+      "distinct_child_keys": 99441,
+      "join": "olist.orders -> olist.customers",
+      "rows_per_key": 1.0
+    },
+    {
+      "child_rows": 103886,
+      "distinct_child_keys": 99440,
+      "join": "olist.payments -> olist.orders",
+      "rows_per_key": 1.0447
+    },
+    {
+      "child_rows": 99224,
+      "distinct_child_keys": 98673,
+      "join": "olist.reviews -> olist.customers (by order)",
+      "rows_per_key": 1.0056
+    },
+    {
+      "child_rows": 2595732,
+      "distinct_child_keys": 92339,
+      "join": "dunnhumby.transactions -> dunnhumby.products",
+      "rows_per_key": 28.1109
+    },
+    {
+      "child_rows": 59181090,
+      "distinct_child_keys": 30490,
+      "join": "m5.sales_long -> m5.series",
+      "rows_per_key": 1941.0
+    },
+    {
+      "child_rows": 59181090,
+      "distinct_child_keys": 1941,
+      "join": "m5.sales_long -> m5.calendar",
+      "rows_per_key": 30490.0
+    }
+  ],
+  "findings": [
+    {
+      "classification": "unverified",
+      "measured": {
+        "duplicate_groups": 14
+      },
+      "message": "grain UNVERIFIABLE (pk=None); candidate key has 14 duplicate group(s)",
+      "section": "grain",
+      "severity": "note",
+      "subject": "dunnhumby.coupon_redemptions"
+    },
+    {
+      "classification": "warning",
+      "measured": {
+        "violations": 1359
+      },
+      "message": "1,359 row(s) handed to carrier before approval (order_delivered_carrier_date < order_approved_at)",
+      "section": "dates",
+      "severity": "warning",
+      "subject": "olist.orders.order_delivered_carrier_date"
+    },
+    {
+      "classification": "warning",
+      "measured": {
+        "violations": 61
+      },
+      "message": "61 row(s) delivered before approval (order_delivered_customer_date < order_approved_at)",
+      "section": "dates",
+      "severity": "warning",
+      "subject": "olist.orders.order_delivered_customer_date"
+    },
+    {
+      "classification": "warning",
+      "measured": {
+        "violations": 166
+      },
+      "message": "166 row(s) handed to carrier before purchase (order_delivered_carrier_date < order_purchase_timestamp)",
+      "section": "dates",
+      "severity": "warning",
+      "subject": "olist.orders.order_delivered_carrier_date"
+    },
+    {
+      "classification": "source_property",
+      "measured": {
+        "database": 1,
+        "raw": 1
+      },
+      "message": "1 row(s) short; the raw publisher file has the same 1. Faithfully loaded, not a partial ingest.",
+      "section": "coverage",
+      "severity": "note",
+      "subject": "olist orders with payments"
+    },
+    {
+      "classification": "source_property",
+      "measured": {
+        "database": 775,
+        "raw": 775
+      },
+      "message": "775 row(s) short; the raw publisher file has the same 775. Faithfully loaded, not a partial ingest.",
+      "section": "coverage",
+      "severity": "note",
+      "subject": "olist orders with items"
+    },
+    {
+      "classification": "source_property",
+      "measured": {
+        "database": 1359,
+        "raw": 1359
+      },
+      "message": "handed to carrier before approval: 1,359 in the database, 1359 in the raw file -> SOURCE PROPERTY",
+      "section": "source_corroboration",
+      "severity": "warning",
+      "subject": "olist.orders.carrier_before_approval"
+    },
+    {
+      "classification": "source_property",
+      "measured": {
+        "database": 61,
+        "raw": 61
+      },
+      "message": "delivered before approval: 61 in the database, 61 in the raw file -> SOURCE PROPERTY",
+      "section": "source_corroboration",
+      "severity": "warning",
+      "subject": "olist.orders.delivered_before_approval"
+    },
+    {
+      "classification": "source_property",
+      "measured": {
+        "database": 166,
+        "raw": 166
+      },
+      "message": "handed to carrier before purchase: 166 in the database, 166 in the raw file -> SOURCE PROPERTY",
+      "section": "source_corroboration",
+      "severity": "warning",
+      "subject": "olist.orders.carrier_before_purchase"
+    },
+    {
+      "classification": "documented_transformation",
+      "measured": {
+        "database_zero": 18879,
+        "float_residue": 29,
+        "raw_exact_zero": 18850
+      },
+      "message": "18,879 zero rows in the database = 18850 exact zeros in the source + 29 IEEE-754 residues (~1e-16) that NUMERIC(18,4) rounds to zero. No negatives in either.",
+      "section": "source_corroboration",
+      "severity": "warning",
+      "subject": "dunnhumby.transactions.sales_value"
+    },
+    {
+      "classification": "legitimate_repeat",
+      "measured": {
+        "database_zero": 9,
+        "methods": {
+          "not_defined": 3,
+          "voucher": 6
+        },
+        "raw_zero": 9
+      },
+      "message": "9 zero-value payments, 0 negative; the source has 9 zeros and 0 negatives, by method {'voucher': 6, 'not_defined': 3}. A voucher is a zero-cash payment method, so 0.0000 is a real value.",
+      "section": "source_corroboration",
+      "severity": "note",
+      "subject": "olist.payments.payment_value"
+    },
+    {
+      "classification": "known_grain_fanout",
+      "measured": {
+        "duplicate_ids": 789,
+        "max": 3,
+        "surplus": 814
+      },
+      "message": "789 review_ids attach to several orders; surplus 814 rows; max multiplicity 3",
+      "section": "fanout",
+      "severity": "note",
+      "subject": "olist.reviews"
+    }
+  ],
+  "foreign_keys": {
+    "count": 15,
+    "cross_schema": 0,
+    "orphans": 0
+  },
+  "generated_utc": "2026-10-04T13:17:17Z",
+  "grain": {
+    "dataco.customers": {
+      "behaviour": "unique",
+      "description": "one DataCo customer",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "customer_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dataco.order_items": {
+      "behaviour": "unique",
+      "description": "one order line item",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_item_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dataco.orders": {
+      "behaviour": "unique",
+      "description": "one supply-chain order",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dataco.products": {
+      "behaviour": "unique",
+      "description": "one product card",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "product_card_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.campaign_contacts": {
+      "behaviour": "unique",
+      "description": "one household targeted by one campaign",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "household_key",
+        "campaign"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.campaigns": {
+      "behaviour": "unique",
+      "description": "one marketing campaign",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "campaign"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.coupon_redemptions": {
+      "candidate_key_duplicate_groups": 14,
+      "reason": "no primary key; grain cannot be declared",
+      "verdict": "unverified"
+    },
+    "dunnhumby.coupons": {
+      "behaviour": "unique",
+      "description": "one coupon distributed for one product in one campaign",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "coupon_upc",
+        "product_id",
+        "campaign"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.household_rfm": {
+      "behaviour": "unique",
+      "description": "derived: one row per household, with or without demographics",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "household_key"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.households": {
+      "behaviour": "unique",
+      "description": "one household WITH demographics",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "household_key"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.products": {
+      "behaviour": "unique",
+      "description": "one dunnhumby product",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "product_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.promo_exposure": {
+      "behaviour": "unique",
+      "description": "one product's promotional presence in one store, one week",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "product_id",
+        "store_id",
+        "week_no",
+        "display",
+        "mailer"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "dunnhumby.transactions": {
+      "behaviour": "unique",
+      "description": "one product line within a household basket",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "household_key",
+        "basket_id",
+        "product_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "m5.calendar": {
+      "behaviour": "unique",
+      "description": "one calendar date",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "d_num"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "m5.sales_daily_total": {
+      "behaviour": "unique",
+      "description": "derived: total units for all stores on one day",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "d_num"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "m5.sales_long": {
+      "behaviour": "unique",
+      "description": "one demand observation: one series on one day",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "id",
+        "d_num"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "m5.sell_prices": {
+      "behaviour": "unique",
+      "description": "one price for one item in one store in one week",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "store_id",
+        "item_id",
+        "wm_yr_wk"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "m5.series": {
+      "behaviour": "unique",
+      "description": "one demand series (item x store)",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.closed_deals": {
+      "behaviour": "unique",
+      "description": "one WON deal per lead (a lead appears here only if it closed)",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "mql_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.customer_rfm": {
+      "behaviour": "unique",
+      "description": "derived: one row per PERSON (customer_unique_id)",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "customer_unique_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.customers": {
+      "behaviour": "unique",
+      "description": "one ORDER's customer record (customer_id is per-order, not per-person)",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "customer_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.geolocation_by_zip": {
+      "behaviour": "unique",
+      "description": "one zip-code prefix",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "geolocation_zip_code_prefix"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.mql": {
+      "behaviour": "unique",
+      "description": "one marketing qualified lead",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "mql_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.order_items": {
+      "behaviour": "unique",
+      "description": "one line item within an order",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_id",
+        "order_item_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.order_payments_agg": {
+      "behaviour": "unique",
+      "description": "derived: one payment summary per order",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.orders": {
+      "behaviour": "unique",
+      "description": "one e-commerce order",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.payments": {
+      "behaviour": "unique",
+      "description": "one payment instalment within an order",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "order_id",
+        "payment_sequential"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.products": {
+      "behaviour": "unique",
+      "description": "one product listing",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "product_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.reviews": {
+      "behaviour": "fanout",
+      "description": "one (review, order) attachment - one review can attach to several orders",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "review_id",
+        "order_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    },
+    "olist.sellers": {
+      "behaviour": "unique",
+      "description": "one seller",
+      "duplicate_groups": 0,
+      "grain_columns": [
+        "seller_id"
+      ],
+      "max_multiplicity": 1,
+      "null_grain_rows": 0,
+      "surplus_rows": 0,
+      "verdict": "unique"
+    }
+  },
+  "keys": {
+    "pk": 29,
+    "pk_violations": 0,
+    "uq": 2,
+    "uq_violations": 0
+  },
+  "read_only_role": "omniretail_readonly",
+  "reconciliation": {
+    "checksum_ok": 27,
+    "etl_notes": 2,
+    "etl_tables": 30,
+    "raw_files": 27,
+    "row_match": 30
+  },
+  "source_corroboration": {
+    "dunnhumby.transactions.sales_value": {
+      "agree": true,
+      "database_negative": 0,
+      "database_zero": 18879,
+      "raw_exact_zero": 18850,
+      "raw_float_residue_below_0.00005": 29,
+      "raw_negative": 0
+    },
+    "olist.orders.carrier_before_approval": {
+      "agree": true,
+      "database": 1359,
+      "raw_source": 1359
+    },
+    "olist.orders.carrier_before_purchase": {
+      "agree": true,
+      "database": 166,
+      "raw_source": 166
+    },
+    "olist.orders.delivered_before_approval": {
+      "agree": true,
+      "database": 61,
+      "raw_source": 61
+    },
+    "olist.payments.payment_value": {
+      "agree": true,
+      "database_negative": 0,
+      "database_zero": 9,
+      "raw_negative": 0,
+      "raw_zero": 9,
+      "zero_by_method": {
+        "not_defined": 3,
+        "voucher": 6
+      }
+    },
+    "olist_orders_without_items": {
+      "agree": true,
+      "database_shortfall": 775,
+      "raw_shortfall": 775
+    },
+    "olist_orders_without_payments": {
+      "agree": true,
+      "database_shortfall": 1,
+      "raw_shortfall": 1
+    }
+  },
+  "tables": {
+    "dataco.customers": {
+      "columns": 10,
+      "date_ranges": {},
+      "null_counts": {
+        "customer_lname": 8,
+        "customer_zipcode": 3
+      },
+      "numeric_ranges": {
+        "customer_id": {
+          "max": 20757,
+          "min": 1
+        },
+        "customer_zipcode": {
+          "max": 99205.0,
+          "min": 603.0
+        },
+        "latitude": {
+          "max": 48.78193283,
+          "min": -33.93755341
+        },
+        "longitude": {
+          "max": 115.2630768,
+          "min": -158.0259857
+        }
+      },
+      "planner_estimate": 20652,
+      "primary_key": "customer_id",
+      "rows": 20652,
+      "total_columns": 10
+    },
+    "dataco.order_items": {
+      "columns": 14,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "benefit_per_order": {
+          "max": 911.8,
+          "min": -4274.98
+        },
+        "order_id": {
+          "max": 77204,
+          "min": 1
+        },
+        "order_item_discount": {
+          "max": 500,
+          "min": 0
+        },
+        "order_item_discount_rate": {
+          "max": 0.25,
+          "min": 0
+        },
+        "order_item_id": {
+          "max": 180519,
+          "min": 1
+        },
+        "order_item_product_price": {
+          "max": 1999.99,
+          "min": 9.99
+        },
+        "order_item_profit_ratio": {
+          "max": 0.5,
+          "min": -2.75
+        },
+        "order_item_quantity": {
+          "max": 5,
+          "min": 1
+        },
+        "order_item_total": {
+          "max": 1939.99,
+          "min": 7.49
+        },
+        "order_profit_per_order": {
+          "max": 911.8,
+          "min": -4274.98
+        },
+        "product_card_id": {
+          "max": 1363,
+          "min": 19
+        },
+        "profit_margin": {
+          "max": 0.5004,
+          "min": -2.75
+        },
+        "sales": {
+          "max": 1999.99,
+          "min": 9.99
+        },
+        "sales_per_customer": {
+          "max": 1939.99,
+          "min": 7.49
+        }
+      },
+      "planner_estimate": 180519,
+      "primary_key": "order_item_id",
+      "rows": 180519,
+      "total_columns": 14
+    },
+    "dataco.orders": {
+      "columns": 23,
+      "date_ranges": {
+        "order_date": {
+          "max": "2018-01-31T23:38:00",
+          "min": "2015-01-01T00:00:00"
+        },
+        "shipping_date": {
+          "max": "2018-02-06T22:14:00",
+          "min": "2015-01-03T00:00:00"
+        }
+      },
+      "null_counts": {},
+      "numeric_ranges": {
+        "customer_id": {
+          "max": 20757,
+          "min": 1
+        },
+        "days_for_shipment_scheduled": {
+          "max": 4,
+          "min": 0
+        },
+        "days_for_shipping_real": {
+          "max": 6,
+          "min": 0
+        },
+        "lead_time_days": {
+          "max": 6.0,
+          "min": 0.5
+        },
+        "order_id": {
+          "max": 77204,
+          "min": 1
+        },
+        "order_items_count": {
+          "max": 5,
+          "min": 1
+        },
+        "order_profit": {
+          "max": 980.28,
+          "min": -4325.85
+        },
+        "order_sales": {
+          "max": 3449.91,
+          "min": 9.99
+        },
+        "order_value": {
+          "max": 2768.41,
+          "min": 7.49
+        },
+        "shipping_delay_days": {
+          "max": 4,
+          "min": -2
+        },
+        "total_quantity": {
+          "max": 24,
+          "min": 1
+        }
+      },
+      "planner_estimate": 65752,
+      "primary_key": "order_id",
+      "rows": 65752,
+      "total_columns": 23
+    },
+    "dataco.products": {
+      "columns": 8,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "category_id": {
+          "max": 76,
+          "min": 2
+        },
+        "department_id": {
+          "max": 12,
+          "min": 2
+        },
+        "product_card_id": {
+          "max": 1363,
+          "min": 19
+        },
+        "product_category_id": {
+          "max": 76,
+          "min": 2
+        },
+        "product_price": {
+          "max": 1999.99,
+          "min": 9.99
+        }
+      },
+      "planner_estimate": 118,
+      "primary_key": "product_card_id",
+      "rows": 118,
+      "total_columns": 8
+    },
+    "dunnhumby.campaign_contacts": {
+      "columns": 3,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "campaign": {
+          "max": 30,
+          "min": 1
+        },
+        "household_key": {
+          "max": 2500,
+          "min": 1
+        }
+      },
+      "planner_estimate": 7208,
+      "primary_key": "household_key, campaign",
+      "rows": 7208,
+      "total_columns": 3
+    },
+    "dunnhumby.campaigns": {
+      "columns": 4,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "campaign": {
+          "max": 30,
+          "min": 1
+        },
+        "end_day": {
+          "max": 719,
+          "min": 264
+        },
+        "start_day": {
+          "max": 659,
+          "min": 224
+        }
+      },
+      "planner_estimate": 30,
+      "primary_key": "campaign",
+      "rows": 30,
+      "total_columns": 4
+    },
+    "dunnhumby.coupon_redemptions": {
+      "columns": 4,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "campaign": {
+          "max": 30,
+          "min": 1
+        },
+        "coupon_upc": {
+          "max": 58978500076,
+          "min": 10000085320
+        },
+        "day": {
+          "max": 704,
+          "min": 225
+        },
+        "household_key": {
+          "max": 2500,
+          "min": 1
+        }
+      },
+      "planner_estimate": 2318,
+      "primary_key": null,
+      "rows": 2318,
+      "total_columns": 4
+    },
+    "dunnhumby.coupons": {
+      "columns": 3,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "campaign": {
+          "max": 30,
+          "min": 1
+        },
+        "coupon_upc": {
+          "max": 59986600074,
+          "min": 10000085189
+        },
+        "product_id": {
+          "max": 18148540,
+          "min": 25671
+        }
+      },
+      "planner_estimate": 119384,
+      "primary_key": "coupon_upc, product_id, campaign",
+      "rows": 119384,
+      "total_columns": 3
+    },
+    "dunnhumby.household_rfm": {
+      "columns": 22,
+      "date_ranges": {},
+      "null_counts": {
+        "HOMEOWNER_DESC": 1699,
+        "KID_CATEGORY_DESC": 1699,
+        "classification_1": 1699,
+        "classification_2": 1699,
+        "classification_3": 1699,
+        "classification_4": 1699,
+        "classification_5": 1699
+      },
+      "numeric_ranges": {
+        "avg_basket_value": {
+          "max": 165.8293,
+          "min": 2.3875
+        },
+        "discount_share": {
+          "max": 0.7859,
+          "min": 0.0099
+        },
+        "distinct_products": {
+          "max": 3159,
+          "min": 4
+        },
+        "first_day": {
+          "max": 671,
+          "min": 1
+        },
+        "frequency": {
+          "max": 1300,
+          "min": 1
+        },
+        "frequency_score": {
+          "max": 5,
+          "min": 1
+        },
+        "household_key": {
+          "max": 2500,
+          "min": 1
+        },
+        "last_day": {
+          "max": 711,
+          "min": 54
+        },
+        "lifespan_days": {
+          "max": 710,
+          "min": 0
+        },
+        "lines": {
+          "max": 6851,
+          "min": 4
+        },
+        "monetary": {
+          "max": 38319.79,
+          "min": 8.17
+        },
+        "monetary_score": {
+          "max": 5,
+          "min": 1
+        },
+        "recency_days": {
+          "max": 657,
+          "min": 0
+        },
+        "recency_score": {
+          "max": 5,
+          "min": 1
+        },
+        "total_discount": {
+          "max": 5162.45,
+          "min": 0.25
+        }
+      },
+      "planner_estimate": 2500,
+      "primary_key": "household_key",
+      "rows": 2500,
+      "total_columns": 22
+    },
+    "dunnhumby.households": {
+      "columns": 8,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "household_key": {
+          "max": 2499,
+          "min": 1
+        }
+      },
+      "planner_estimate": 801,
+      "primary_key": "household_key",
+      "rows": 801,
+      "total_columns": 8
+    },
+    "dunnhumby.products": {
+      "columns": 7,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "manufacturer": {
+          "max": 6477,
+          "min": 1
+        },
+        "product_id": {
+          "max": 18316298,
+          "min": 25671
+        }
+      },
+      "planner_estimate": 92353,
+      "primary_key": "product_id",
+      "rows": 92353,
+      "total_columns": 7
+    },
+    "dunnhumby.promo_exposure": {
+      "columns": 5,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "product_id": {
+          "max": 18244453,
+          "min": 26190
+        },
+        "store_id": {
+          "max": 34280,
+          "min": 286
+        },
+        "week_no": {
+          "max": 101,
+          "min": 9
+        }
+      },
+      "planner_estimate": 36786524,
+      "primary_key": "product_id, store_id, week_no, display, mailer",
+      "rows": 36786524,
+      "total_columns": 5
+    },
+    "dunnhumby.transactions": {
+      "columns": 15,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "basket_id": {
+          "max": 42305362535,
+          "min": 26984851472
+        },
+        "coupon_disc": {
+          "max": 0.0,
+          "min": -55.93
+        },
+        "coupon_match_disc": {
+          "max": 0.0,
+          "min": -7.7
+        },
+        "day": {
+          "max": 711,
+          "min": 1
+        },
+        "gross_sales_value": {
+          "max": 840,
+          "min": -0.01
+        },
+        "household_key": {
+          "max": 2500,
+          "min": 1
+        },
+        "product_id": {
+          "max": 18316298,
+          "min": 25671
+        },
+        "quantity": {
+          "max": 89638,
+          "min": 0
+        },
+        "retail_disc": {
+          "max": 3.99,
+          "min": -180.0
+        },
+        "sales_value": {
+          "max": 840,
+          "min": 0
+        },
+        "store_id": {
+          "max": 34280,
+          "min": 1
+        },
+        "total_discount": {
+          "max": 180,
+          "min": -3.99
+        },
+        "trans_time": {
+          "max": 2359,
+          "min": 0
+        },
+        "week_no": {
+          "max": 102,
+          "min": 1
+        }
+      },
+      "planner_estimate": 2595540,
+      "primary_key": "household_key, basket_id, product_id",
+      "rows": 2595732,
+      "total_columns": 15
+    },
+    "m5.calendar": {
+      "columns": 15,
+      "date_ranges": {
+        "date": {
+          "max": "2016-06-19T00:00:00",
+          "min": "2011-01-29T00:00:00"
+        }
+      },
+      "null_counts": {
+        "event_name_1": 1807,
+        "event_name_2": 1964,
+        "event_type_1": 1807,
+        "event_type_2": 1964
+      },
+      "numeric_ranges": {
+        "d_num": {
+          "max": 1969,
+          "min": 1
+        },
+        "month": {
+          "max": 12,
+          "min": 1
+        },
+        "snap_ca": {
+          "max": 1,
+          "min": 0
+        },
+        "snap_tx": {
+          "max": 1,
+          "min": 0
+        },
+        "snap_wi": {
+          "max": 1,
+          "min": 0
+        },
+        "wday": {
+          "max": 7,
+          "min": 1
+        },
+        "wm_yr_wk": {
+          "max": 11621,
+          "min": 11101
+        },
+        "year": {
+          "max": 2016,
+          "min": 2011
+        }
+      },
+      "planner_estimate": 1969,
+      "primary_key": "d_num",
+      "rows": 1969,
+      "total_columns": 15
+    },
+    "m5.sales_daily_total": {
+      "columns": 6,
+      "date_ranges": {
+        "date": {
+          "max": "2016-05-22T00:00:00",
+          "min": "2011-01-29T00:00:00"
+        }
+      },
+      "null_counts": {},
+      "numeric_ranges": {
+        "d_num": {
+          "max": 1941,
+          "min": 1
+        },
+        "month": {
+          "max": 12,
+          "min": 1
+        },
+        "total_units": {
+          "max": 59921,
+          "min": 11
+        },
+        "year": {
+          "max": 2016,
+          "min": 2011
+        }
+      },
+      "planner_estimate": 1941,
+      "primary_key": "d_num",
+      "rows": 1941,
+      "total_columns": 6
+    },
+    "m5.sales_long": {
+      "columns": 8,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "d_num": {
+          "max": 1941,
+          "min": 1
+        },
+        "sales": {
+          "max": 763,
+          "min": 0
+        }
+      },
+      "planner_estimate": 59200792,
+      "primary_key": "id, d_num",
+      "rows": 59181090,
+      "total_columns": 8
+    },
+    "m5.sell_prices": {
+      "columns": 4,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "sell_price": {
+          "max": 107.32,
+          "min": 0.01
+        },
+        "wm_yr_wk": {
+          "max": 11621,
+          "min": 11101
+        }
+      },
+      "planner_estimate": 6840874,
+      "primary_key": "store_id, item_id, wm_yr_wk",
+      "rows": 6841121,
+      "total_columns": 4
+    },
+    "m5.series": {
+      "columns": 8,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {},
+      "planner_estimate": 30490,
+      "primary_key": "id",
+      "rows": 30490,
+      "total_columns": 8
+    },
+    "olist.closed_deals": {
+      "columns": 14,
+      "date_ranges": {
+        "won_date": {
+          "max": "2018-11-14T18:04:19",
+          "min": "2017-12-05T02:00:00"
+        }
+      },
+      "null_counts": {
+        "average_stock": 776,
+        "business_segment": 1,
+        "business_type": 10,
+        "declared_product_catalog_size": 773,
+        "has_company": 779,
+        "has_gtin": 778,
+        "lead_behaviour_profile": 177,
+        "lead_type": 6
+      },
+      "numeric_ranges": {
+        "declared_monthly_revenue": {
+          "max": 50000000,
+          "min": 0
+        },
+        "declared_product_catalog_size": {
+          "max": 2000.0,
+          "min": 1.0
+        }
+      },
+      "planner_estimate": 842,
+      "primary_key": "mql_id",
+      "rows": 842,
+      "total_columns": 14
+    },
+    "olist.customer_rfm": {
+      "columns": 11,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "avg_order_value": {
+          "max": 13440,
+          "min": 0
+        },
+        "frequency": {
+          "max": 17,
+          "min": 1
+        },
+        "frequency_score": {
+          "max": 5,
+          "min": 1
+        },
+        "lifespan_days": {
+          "max": 633.0841898148149,
+          "min": 0.0
+        },
+        "monetary": {
+          "max": 13440,
+          "min": 0
+        },
+        "monetary_score": {
+          "max": 5,
+          "min": 1
+        },
+        "recency_days": {
+          "max": 772.843738425926,
+          "min": 0.0
+        },
+        "recency_score": {
+          "max": 5,
+          "min": 1
+        }
+      },
+      "planner_estimate": 96096,
+      "primary_key": "customer_unique_id",
+      "rows": 96096,
+      "total_columns": 11
+    },
+    "olist.customers": {
+      "columns": 5,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "customer_zip_code_prefix": {
+          "max": 99990,
+          "min": 1003
+        }
+      },
+      "planner_estimate": 99441,
+      "primary_key": "customer_id",
+      "rows": 99441,
+      "total_columns": 5
+    },
+    "olist.geolocation_by_zip": {
+      "columns": 6,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "geolocation_zip_code_prefix": {
+          "max": 99990,
+          "min": 1001
+        },
+        "latitude": {
+          "max": 42.18400274298598,
+          "min": -33.68988966175978
+        },
+        "longitude": {
+          "max": 121.10539381057764,
+          "min": -72.91606928086937
+        },
+        "points": {
+          "max": 779,
+          "min": 1
+        }
+      },
+      "planner_estimate": 19015,
+      "primary_key": "geolocation_zip_code_prefix",
+      "rows": 19015,
+      "total_columns": 6
+    },
+    "olist.mql": {
+      "columns": 4,
+      "date_ranges": {
+        "first_contact_date": {
+          "max": "2018-05-31T00:00:00",
+          "min": "2017-06-14T00:00:00"
+        }
+      },
+      "null_counts": {
+        "origin": 60
+      },
+      "numeric_ranges": {},
+      "planner_estimate": 8000,
+      "primary_key": "mql_id",
+      "rows": 8000,
+      "total_columns": 4
+    },
+    "olist.order_items": {
+      "columns": 8,
+      "date_ranges": {
+        "shipping_limit_date": {
+          "max": "2020-04-09T22:35:08",
+          "min": "2016-09-19T00:15:34"
+        }
+      },
+      "null_counts": {},
+      "numeric_ranges": {
+        "freight_value": {
+          "max": 409.68,
+          "min": 0
+        },
+        "item_total": {
+          "max": 6929.31,
+          "min": 6.08
+        },
+        "order_item_id": {
+          "max": 21,
+          "min": 1
+        },
+        "price": {
+          "max": 6735,
+          "min": 0.85
+        }
+      },
+      "planner_estimate": 112650,
+      "primary_key": "order_id, order_item_id",
+      "rows": 112650,
+      "total_columns": 8
+    },
+    "olist.order_payments_agg": {
+      "columns": 6,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "payment_count": {
+          "max": 29,
+          "min": 1
+        },
+        "payment_installments_max": {
+          "max": 24,
+          "min": 0
+        },
+        "payment_total": {
+          "max": 13664.08,
+          "min": 0
+        },
+        "payment_type_count": {
+          "max": 2,
+          "min": 1
+        }
+      },
+      "planner_estimate": 99440,
+      "primary_key": "order_id",
+      "rows": 99440,
+      "total_columns": 6
+    },
+    "olist.orders": {
+      "columns": 16,
+      "date_ranges": {
+        "delivered_to_customer_date": {
+          "max": "2018-10-17T00:00:00",
+          "min": "2016-10-11T00:00:00"
+        },
+        "estimated_delivery_date": {
+          "max": "2018-11-12T00:00:00",
+          "min": "2016-09-30T00:00:00"
+        },
+        "order_approved_at": {
+          "max": "2018-09-03T17:40:06",
+          "min": "2016-09-15T12:16:38"
+        },
+        "order_delivered_carrier_date": {
+          "max": "2018-09-11T19:48:28",
+          "min": "2016-10-08T10:34:01"
+        },
+        "order_delivered_customer_date": {
+          "max": "2018-10-17T13:22:46",
+          "min": "2016-10-11T13:46:32"
+        },
+        "order_estimated_delivery_date": {
+          "max": "2018-11-12T00:00:00",
+          "min": "2016-09-30T00:00:00"
+        },
+        "order_purchase_timestamp": {
+          "max": "2018-10-17T17:30:18",
+          "min": "2016-09-04T21:15:19"
+        },
+        "purchase_date": {
+          "max": "2018-10-17T00:00:00",
+          "min": "2016-09-04T00:00:00"
+        }
+      },
+      "null_counts": {
+        "delay_days": 2965,
+        "delivered_to_customer_date": 2965,
+        "delivery_days": 2965,
+        "is_late": 2965,
+        "order_approved_at": 160,
+        "order_delivered_carrier_date": 1783,
+        "order_delivered_customer_date": 2965
+      },
+      "numeric_ranges": {
+        "delay_days": {
+          "max": 188.97508101851852,
+          "min": -146.0161226851852
+        },
+        "delivery_days": {
+          "max": 209.6286111111111,
+          "min": 0.5334143518518518
+        },
+        "estimated_days": {
+          "max": 155.13546296296298,
+          "min": 1.6489930555555556
+        }
+      },
+      "planner_estimate": 99441,
+      "primary_key": "order_id",
+      "rows": 99441,
+      "total_columns": 16
+    },
+    "olist.payments": {
+      "columns": 5,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "payment_installments": {
+          "max": 24,
+          "min": 0
+        },
+        "payment_sequential": {
+          "max": 29,
+          "min": 1
+        },
+        "payment_value": {
+          "max": 13664.08,
+          "min": 0
+        }
+      },
+      "planner_estimate": 103886,
+      "primary_key": "order_id, payment_sequential",
+      "rows": 103886,
+      "total_columns": 5
+    },
+    "olist.products": {
+      "columns": 10,
+      "date_ranges": {},
+      "null_counts": {
+        "product_category_name_english": 610,
+        "product_description_length": 610,
+        "product_height_cm": 2,
+        "product_length_cm": 2,
+        "product_name_length": 610,
+        "product_photos_qty": 610,
+        "product_weight_g": 2,
+        "product_width_cm": 2
+      },
+      "numeric_ranges": {
+        "product_description_length": {
+          "max": 3992.0,
+          "min": 4.0
+        },
+        "product_height_cm": {
+          "max": 105.0,
+          "min": 2.0
+        },
+        "product_length_cm": {
+          "max": 105.0,
+          "min": 7.0
+        },
+        "product_name_length": {
+          "max": 76.0,
+          "min": 5.0
+        },
+        "product_photos_qty": {
+          "max": 20.0,
+          "min": 1.0
+        },
+        "product_weight_g": {
+          "max": 40425.0,
+          "min": 0.0
+        },
+        "product_width_cm": {
+          "max": 118.0,
+          "min": 6.0
+        }
+      },
+      "planner_estimate": 32951,
+      "primary_key": "product_id",
+      "rows": 32951,
+      "total_columns": 10
+    },
+    "olist.reviews": {
+      "columns": 8,
+      "date_ranges": {
+        "review_answer_timestamp": {
+          "max": "2018-10-29T12:27:35",
+          "min": "2016-10-07T18:32:28"
+        },
+        "review_creation_date": {
+          "max": "2018-08-31T00:00:00",
+          "min": "2016-10-02T00:00:00"
+        }
+      },
+      "null_counts": {
+        "review_comment_message": 58247,
+        "review_comment_title": 87656
+      },
+      "numeric_ranges": {
+        "review_response_hours": {
+          "max": 12448.781111111111,
+          "min": 2.141388888888889
+        },
+        "review_score": {
+          "max": 5,
+          "min": 1
+        }
+      },
+      "planner_estimate": 99224,
+      "primary_key": "review_id, order_id",
+      "rows": 99224,
+      "total_columns": 8
+    },
+    "olist.sellers": {
+      "columns": 4,
+      "date_ranges": {},
+      "null_counts": {},
+      "numeric_ranges": {
+        "seller_zip_code_prefix": {
+          "max": 99730,
+          "min": 1001
+        }
+      },
+      "planner_estimate": 3095,
+      "primary_key": "seller_id",
+      "rows": 3095,
+      "total_columns": 4
+    }
+  },
+  "write_probes": {
+    "ALTER": "refused (cannot execute ALTER TABLE in a read-only transaction)",
+    "CREATE": "refused (cannot execute CREATE TABLE in a read-only transaction)",
+    "DELETE": "refused (cannot execute DELETE in a read-only transaction)",
+    "DROP": "refused (cannot execute DROP TABLE in a read-only transaction)",
+    "GRANT": "refused (cannot execute GRANT in a read-only transaction)",
+    "INSERT": "refused (cannot execute INSERT in a read-only transaction)",
+    "REVOKE": "refused (cannot execute REVOKE in a read-only transaction)",
+    "TRUNCATE": "refused (cannot execute TRUNCATE TABLE in a read-only transaction)",
+    "UPDATE": "refused (cannot execute UPDATE in a read-only transaction)"
+  }
+}

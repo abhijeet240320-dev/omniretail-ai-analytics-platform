@@ -1,0 +1,868 @@
+{
+  "candidate_keys": [
+    {
+      "columns": [
+        "customer_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.customers primary key on (customer_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "customer_unique_id",
+        "customer_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "unique",
+      "label": "olist.customers unique on (customer_unique_id, customer_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "product_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.products primary key on (product_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "seller_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.sellers primary key on (seller_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.orders primary key on (order_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_id",
+        "order_item_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.order_items primary key on (order_id, order_item_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_id",
+        "payment_sequential"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.payments primary key on (order_id, payment_sequential)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.order_payments_agg primary key on (order_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "review_id",
+        "order_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.reviews primary key on (review_id, order_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "geolocation_zip_code_prefix"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.geolocation_by_zip primary key on (geolocation_zip_code_prefix)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "mql_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.mql primary key on (mql_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "mql_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.closed_deals primary key on (mql_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "customer_unique_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "olist.customer_rfm primary key on (customer_unique_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "product_card_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dataco.products primary key on (product_card_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "customer_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dataco.customers primary key on (customer_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dataco.orders primary key on (order_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "order_item_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dataco.order_items primary key on (order_item_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "product_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.products primary key on (product_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "household_key"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.households primary key on (household_key)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "campaign"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.campaigns primary key on (campaign)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "household_key",
+        "campaign"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.campaign_contacts primary key on (household_key, campaign)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "coupon_upc",
+        "product_id",
+        "campaign"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.coupons primary key on (coupon_upc, product_id, campaign)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "household_key",
+        "day",
+        "coupon_upc"
+      ],
+      "duplicate_groups": 14,
+      "duplicate_rows": 14,
+      "holds": false,
+      "kind": "primary key",
+      "label": "dunnhumby.coupon_redemptions primary key on (household_key, day, coupon_upc)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "household_key",
+        "basket_id",
+        "product_id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.transactions primary key on (household_key, basket_id, product_id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "product_id",
+        "store_id",
+        "week_no",
+        "display",
+        "mailer"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.promo_exposure primary key on (product_id, store_id, week_no, display, mailer)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "household_key"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "dunnhumby.household_rfm primary key on (household_key)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "d_num"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "m5.calendar primary key on (d_num)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "date"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "unique",
+      "label": "m5.calendar unique on (date)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "m5.series primary key on (id)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "store_id",
+        "item_id",
+        "wm_yr_wk"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "m5.sell_prices primary key on (store_id, item_id, wm_yr_wk)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "id",
+        "d_num"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "m5.sales_long primary key on (id, d_num)",
+      "nulls": 0
+    },
+    {
+      "columns": [
+        "d_num"
+      ],
+      "duplicate_groups": 0,
+      "duplicate_rows": 0,
+      "holds": true,
+      "kind": "primary key",
+      "label": "m5.sales_daily_total primary key on (d_num)",
+      "nulls": 0
+    }
+  ],
+  "constraints": [
+    {
+      "definition": "PRIMARY KEY (customer_id)",
+      "kind": "primary key",
+      "name": "pk_dataco_customers",
+      "schema": "dataco",
+      "table": "customers"
+    },
+    {
+      "definition": "FOREIGN KEY (order_id) REFERENCES dataco.orders(order_id)",
+      "kind": "foreign key",
+      "name": "fk_dataco_order_items_order_id",
+      "schema": "dataco",
+      "table": "order_items"
+    },
+    {
+      "definition": "FOREIGN KEY (product_card_id) REFERENCES dataco.products(product_card_id)",
+      "kind": "foreign key",
+      "name": "fk_dataco_order_items_product_card_id",
+      "schema": "dataco",
+      "table": "order_items"
+    },
+    {
+      "definition": "PRIMARY KEY (order_item_id)",
+      "kind": "primary key",
+      "name": "pk_dataco_order_items",
+      "schema": "dataco",
+      "table": "order_items"
+    },
+    {
+      "definition": "FOREIGN KEY (customer_id) REFERENCES dataco.customers(customer_id)",
+      "kind": "foreign key",
+      "name": "fk_dataco_orders_customer_id",
+      "schema": "dataco",
+      "table": "orders"
+    },
+    {
+      "definition": "PRIMARY KEY (order_id)",
+      "kind": "primary key",
+      "name": "pk_dataco_orders",
+      "schema": "dataco",
+      "table": "orders"
+    },
+    {
+      "definition": "PRIMARY KEY (product_card_id)",
+      "kind": "primary key",
+      "name": "pk_dataco_products",
+      "schema": "dataco",
+      "table": "products"
+    },
+    {
+      "definition": "PRIMARY KEY (household_key, campaign)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_campaign_contacts",
+      "schema": "dunnhumby",
+      "table": "campaign_contacts"
+    },
+    {
+      "definition": "PRIMARY KEY (campaign)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_campaigns",
+      "schema": "dunnhumby",
+      "table": "campaigns"
+    },
+    {
+      "definition": "PRIMARY KEY (coupon_upc, product_id, campaign)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_coupons",
+      "schema": "dunnhumby",
+      "table": "coupons"
+    },
+    {
+      "definition": "PRIMARY KEY (household_key)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_household_rfm",
+      "schema": "dunnhumby",
+      "table": "household_rfm"
+    },
+    {
+      "definition": "PRIMARY KEY (household_key)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_households",
+      "schema": "dunnhumby",
+      "table": "households"
+    },
+    {
+      "definition": "PRIMARY KEY (product_id)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_products",
+      "schema": "dunnhumby",
+      "table": "products"
+    },
+    {
+      "definition": "FOREIGN KEY (product_id) REFERENCES dunnhumby.products(product_id)",
+      "kind": "foreign key",
+      "name": "fk_dunnhumby_promo_exposure_product_id",
+      "schema": "dunnhumby",
+      "table": "promo_exposure"
+    },
+    {
+      "definition": "PRIMARY KEY (product_id, store_id, week_no, display, mailer)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_promo_exposure",
+      "schema": "dunnhumby",
+      "table": "promo_exposure"
+    },
+    {
+      "definition": "FOREIGN KEY (product_id) REFERENCES dunnhumby.products(product_id)",
+      "kind": "foreign key",
+      "name": "fk_dunnhumby_transactions_product_id",
+      "schema": "dunnhumby",
+      "table": "transactions"
+    },
+    {
+      "definition": "PRIMARY KEY (household_key, basket_id, product_id)",
+      "kind": "primary key",
+      "name": "pk_dunnhumby_transactions",
+      "schema": "dunnhumby",
+      "table": "transactions"
+    },
+    {
+      "definition": "PRIMARY KEY (d_num)",
+      "kind": "primary key",
+      "name": "pk_m5_calendar",
+      "schema": "m5",
+      "table": "calendar"
+    },
+    {
+      "definition": "UNIQUE (date)",
+      "kind": "unique",
+      "name": "uq_m5_calendar_1",
+      "schema": "m5",
+      "table": "calendar"
+    },
+    {
+      "definition": "FOREIGN KEY (d_num) REFERENCES m5.calendar(d_num)",
+      "kind": "foreign key",
+      "name": "fk_m5_sales_daily_total_d_num",
+      "schema": "m5",
+      "table": "sales_daily_total"
+    },
+    {
+      "definition": "PRIMARY KEY (d_num)",
+      "kind": "primary key",
+      "name": "pk_m5_sales_daily_total",
+      "schema": "m5",
+      "table": "sales_daily_total"
+    },
+    {
+      "definition": "FOREIGN KEY (d_num) REFERENCES m5.calendar(d_num)",
+      "kind": "foreign key",
+      "name": "fk_m5_sales_long_d_num",
+      "schema": "m5",
+      "table": "sales_long"
+    },
+    {
+      "definition": "FOREIGN KEY (id) REFERENCES m5.series(id)",
+      "kind": "foreign key",
+      "name": "fk_m5_sales_long_id",
+      "schema": "m5",
+      "table": "sales_long"
+    },
+    {
+      "definition": "PRIMARY KEY (id, d_num)",
+      "kind": "primary key",
+      "name": "pk_m5_sales_long",
+      "schema": "m5",
+      "table": "sales_long"
+    },
+    {
+      "definition": "PRIMARY KEY (store_id, item_id, wm_yr_wk)",
+      "kind": "primary key",
+      "name": "pk_m5_sell_prices",
+      "schema": "m5",
+      "table": "sell_prices"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "kind": "primary key",
+      "name": "pk_m5_series",
+      "schema": "m5",
+      "table": "series"
+    },
+    {
+      "definition": "FOREIGN KEY (mql_id) REFERENCES olist.mql(mql_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_closed_deals_mql_id",
+      "schema": "olist",
+      "table": "closed_deals"
+    },
+    {
+      "definition": "PRIMARY KEY (mql_id)",
+      "kind": "primary key",
+      "name": "pk_olist_closed_deals",
+      "schema": "olist",
+      "table": "closed_deals"
+    },
+    {
+      "definition": "PRIMARY KEY (customer_unique_id)",
+      "kind": "primary key",
+      "name": "pk_olist_customer_rfm",
+      "schema": "olist",
+      "table": "customer_rfm"
+    },
+    {
+      "definition": "PRIMARY KEY (customer_id)",
+      "kind": "primary key",
+      "name": "pk_olist_customers",
+      "schema": "olist",
+      "table": "customers"
+    },
+    {
+      "definition": "UNIQUE (customer_unique_id, customer_id)",
+      "kind": "unique",
+      "name": "uq_olist_customers_1",
+      "schema": "olist",
+      "table": "customers"
+    },
+    {
+      "definition": "PRIMARY KEY (geolocation_zip_code_prefix)",
+      "kind": "primary key",
+      "name": "pk_olist_geolocation_by_zip",
+      "schema": "olist",
+      "table": "geolocation_by_zip"
+    },
+    {
+      "definition": "PRIMARY KEY (mql_id)",
+      "kind": "primary key",
+      "name": "pk_olist_mql",
+      "schema": "olist",
+      "table": "mql"
+    },
+    {
+      "definition": "FOREIGN KEY (order_id) REFERENCES olist.orders(order_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_order_items_order_id",
+      "schema": "olist",
+      "table": "order_items"
+    },
+    {
+      "definition": "FOREIGN KEY (product_id) REFERENCES olist.products(product_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_order_items_product_id",
+      "schema": "olist",
+      "table": "order_items"
+    },
+    {
+      "definition": "FOREIGN KEY (seller_id) REFERENCES olist.sellers(seller_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_order_items_seller_id",
+      "schema": "olist",
+      "table": "order_items"
+    },
+    {
+      "definition": "PRIMARY KEY (order_id, order_item_id)",
+      "kind": "primary key",
+      "name": "pk_olist_order_items",
+      "schema": "olist",
+      "table": "order_items"
+    },
+    {
+      "definition": "FOREIGN KEY (order_id) REFERENCES olist.orders(order_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_order_payments_agg_order_id",
+      "schema": "olist",
+      "table": "order_payments_agg"
+    },
+    {
+      "definition": "PRIMARY KEY (order_id)",
+      "kind": "primary key",
+      "name": "pk_olist_order_payments_agg",
+      "schema": "olist",
+      "table": "order_payments_agg"
+    },
+    {
+      "definition": "FOREIGN KEY (customer_id) REFERENCES olist.customers(customer_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_orders_customer_id",
+      "schema": "olist",
+      "table": "orders"
+    },
+    {
+      "definition": "PRIMARY KEY (order_id)",
+      "kind": "primary key",
+      "name": "pk_olist_orders",
+      "schema": "olist",
+      "table": "orders"
+    },
+    {
+      "definition": "FOREIGN KEY (order_id) REFERENCES olist.orders(order_id)",
+      "kind": "foreign key",
+      "name": "fk_olist_payments_order_id",
+      "schema": "olist",
+      "table": "payments"
+    },
+    {
+      "definition": "PRIMARY KEY (order_id, payment_sequential)",
+      "kind": "primary key",
+      "name": "pk_olist_payments",
+      "schema": "olist",
+      "table": "payments"
+    },
+    {
+      "definition": "PRIMARY KEY (product_id)",
+      "kind": "primary key",
+      "name": "pk_olist_products",
+      "schema": "olist",
+      "table": "products"
+    },
+    {
+      "definition": "PRIMARY KEY (review_id, order_id)",
+      "kind": "primary key",
+      "name": "pk_olist_reviews",
+      "schema": "olist",
+      "table": "reviews"
+    },
+    {
+      "definition": "PRIMARY KEY (seller_id)",
+      "kind": "primary key",
+      "name": "pk_olist_sellers",
+      "schema": "olist",
+      "table": "sellers"
+    }
+  ],
+  "elapsed_seconds": 107.2,
+  "failures": [],
+  "referential_integrity": [
+    {
+      "columns": [
+        "customer_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.orders -> customers(customer_id)"
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.order_items -> orders(order_id)"
+    },
+    {
+      "columns": [
+        "product_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.order_items -> products(product_id)"
+    },
+    {
+      "columns": [
+        "seller_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.order_items -> sellers(seller_id)"
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.payments -> orders(order_id)"
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.order_payments_agg -> orders(order_id)"
+    },
+    {
+      "columns": [
+        "mql_id"
+      ],
+      "orphans": 0,
+      "relationship": "olist.closed_deals -> mql(mql_id)"
+    },
+    {
+      "columns": [
+        "customer_id"
+      ],
+      "orphans": 0,
+      "relationship": "dataco.orders -> customers(customer_id)"
+    },
+    {
+      "columns": [
+        "order_id"
+      ],
+      "orphans": 0,
+      "relationship": "dataco.order_items -> orders(order_id)"
+    },
+    {
+      "columns": [
+        "product_card_id"
+      ],
+      "orphans": 0,
+      "relationship": "dataco.order_items -> products(product_card_id)"
+    },
+    {
+      "columns": [
+        "product_id"
+      ],
+      "orphans": 0,
+      "relationship": "dunnhumby.transactions -> products(product_id)"
+    },
+    {
+      "columns": [
+        "product_id"
+      ],
+      "orphans": 0,
+      "relationship": "dunnhumby.promo_exposure -> products(product_id)"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "orphans": 0,
+      "relationship": "m5.sales_long -> series(id)"
+    },
+    {
+      "columns": [
+        "d_num"
+      ],
+      "orphans": 0,
+      "relationship": "m5.sales_long -> calendar(d_num)"
+    },
+    {
+      "columns": [
+        "d_num"
+      ],
+      "orphans": 0,
+      "relationship": "m5.sales_daily_total -> calendar(d_num)"
+    }
+  ],
+  "row_counts": {
+    "dataco.customers": 20652,
+    "dataco.order_items": 180519,
+    "dataco.orders": 65752,
+    "dataco.products": 118,
+    "dunnhumby.campaign_contacts": 7208,
+    "dunnhumby.campaigns": 30,
+    "dunnhumby.coupon_redemptions": 2318,
+    "dunnhumby.coupons": 119384,
+    "dunnhumby.household_rfm": 2500,
+    "dunnhumby.households": 801,
+    "dunnhumby.products": 92353,
+    "dunnhumby.promo_exposure": 36786524,
+    "dunnhumby.transactions": 2595732,
+    "m5.calendar": 1969,
+    "m5.sales_daily_total": 1941,
+    "m5.sales_long": 59181090,
+    "m5.sell_prices": 6841121,
+    "m5.series": 30490,
+    "olist.closed_deals": 842,
+    "olist.customer_rfm": 96096,
+    "olist.customers": 99441,
+    "olist.geolocation_by_zip": 19015,
+    "olist.mql": 8000,
+    "olist.order_items": 112650,
+    "olist.order_payments_agg": 99440,
+    "olist.orders": 99441,
+    "olist.payments": 103886,
+    "olist.products": 32951,
+    "olist.reviews": 99224,
+    "olist.sellers": 3095
+  },
+  "spot_checks": [
+    {
+      "actual": 33054402.04,
+      "expected": 33054402.0409,
+      "label": "dataco line sum = order sum",
+      "ok": true
+    },
+    {
+      "actual": 66927173,
+      "label": "m5.sales_long total units",
+      "ok": true
+    },
+    {
+      "actual": 0,
+      "expected": 0,
+      "label": "m5 daily rollup vs sales_long",
+      "ok": true
+    },
+    {
+      "actual": 16008872.12,
+      "expected": 16008872.12,
+      "label": "olist aggregated payment total = raw total",
+      "ok": true
+    }
+  ],
+  "total_rows": 106704583,
+  "warnings": [
+    "dunnhumby.coupon_redemptions primary key on (household_key, day, coupon_upc): 14 duplicate row(s) across 14 key value(s)"
+  ]
+}

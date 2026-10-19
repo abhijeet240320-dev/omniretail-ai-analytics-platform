@@ -1,0 +1,898 @@
+{
+  "alembic_revision": "baseline",
+  "constraints_rejected": [
+    {
+      "action": "verified",
+      "columns": [
+        "household_key",
+        "day",
+        "coupon_upc"
+      ],
+      "detail": "rejected: 14 duplicate row(s) across 14 key value(s)",
+      "kind": "primary key",
+      "table": "dunnhumby.coupon_redemptions"
+    }
+  ],
+  "constraints_verified": [
+    {
+      "action": "verified",
+      "columns": [
+        "customer_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.customers"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "customer_unique_id",
+        "customer_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "unique",
+      "table": "olist.customers"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.products"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "seller_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.sellers"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.orders"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "customer_id"
+      ],
+      "detail": "references olist.customers(customer_id)",
+      "kind": "foreign key",
+      "table": "olist.orders"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id",
+        "order_item_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "references olist.orders(order_id)",
+      "kind": "foreign key",
+      "table": "olist.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id"
+      ],
+      "detail": "references olist.products(product_id)",
+      "kind": "foreign key",
+      "table": "olist.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "seller_id"
+      ],
+      "detail": "references olist.sellers(seller_id)",
+      "kind": "foreign key",
+      "table": "olist.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id",
+        "payment_sequential"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.payments"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "references olist.orders(order_id)",
+      "kind": "foreign key",
+      "table": "olist.payments"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.order_payments_agg"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "references olist.orders(order_id)",
+      "kind": "foreign key",
+      "table": "olist.order_payments_agg"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "review_id",
+        "order_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.reviews"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "geolocation_zip_code_prefix"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.geolocation_by_zip"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "mql_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.mql"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "mql_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.closed_deals"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "mql_id"
+      ],
+      "detail": "references olist.mql(mql_id)",
+      "kind": "foreign key",
+      "table": "olist.closed_deals"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "customer_unique_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "olist.customer_rfm"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_card_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dataco.products"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "customer_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dataco.customers"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dataco.orders"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "customer_id"
+      ],
+      "detail": "references dataco.customers(customer_id)",
+      "kind": "foreign key",
+      "table": "dataco.orders"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_item_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dataco.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "order_id"
+      ],
+      "detail": "references dataco.orders(order_id)",
+      "kind": "foreign key",
+      "table": "dataco.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_card_id"
+      ],
+      "detail": "references dataco.products(product_card_id)",
+      "kind": "foreign key",
+      "table": "dataco.order_items"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.products"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "household_key"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.households"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "campaign"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.campaigns"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "household_key",
+        "campaign"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.campaign_contacts"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "coupon_upc",
+        "product_id",
+        "campaign"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.coupons"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "household_key",
+        "basket_id",
+        "product_id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.transactions"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id"
+      ],
+      "detail": "references dunnhumby.products(product_id)",
+      "kind": "foreign key",
+      "table": "dunnhumby.transactions"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id",
+        "store_id",
+        "week_no",
+        "display",
+        "mailer"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.promo_exposure"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "product_id"
+      ],
+      "detail": "references dunnhumby.products(product_id)",
+      "kind": "foreign key",
+      "table": "dunnhumby.promo_exposure"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "household_key"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "dunnhumby.household_rfm"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "d_num"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "m5.calendar"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "date"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "unique",
+      "table": "m5.calendar"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "id"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "m5.series"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "store_id",
+        "item_id",
+        "wm_yr_wk"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "m5.sell_prices"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "id",
+        "d_num"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "m5.sales_long"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "d_num"
+      ],
+      "detail": "references m5.calendar(d_num)",
+      "kind": "foreign key",
+      "table": "m5.sales_long"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "id"
+      ],
+      "detail": "references m5.series(id)",
+      "kind": "foreign key",
+      "table": "m5.sales_long"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "d_num"
+      ],
+      "detail": "unique, no NULLs",
+      "kind": "primary key",
+      "table": "m5.sales_daily_total"
+    },
+    {
+      "action": "verified",
+      "columns": [
+        "d_num"
+      ],
+      "detail": "references m5.calendar(d_num)",
+      "kind": "foreign key",
+      "table": "m5.sales_daily_total"
+    }
+  ],
+  "copy_methods": {
+    "dataco.customers": "verified in place, no COPY",
+    "dataco.order_items": "verified in place, no COPY",
+    "dataco.orders": "verified in place, no COPY",
+    "dataco.products": "verified in place, no COPY",
+    "dunnhumby.campaign_contacts": "verified in place, no COPY",
+    "dunnhumby.campaigns": "verified in place, no COPY",
+    "dunnhumby.coupon_redemptions": "verified in place, no COPY",
+    "dunnhumby.coupons": "verified in place, no COPY",
+    "dunnhumby.household_rfm": "verified in place, no COPY",
+    "dunnhumby.households": "verified in place, no COPY",
+    "dunnhumby.products": "verified in place, no COPY",
+    "dunnhumby.promo_exposure": "verified in place, no COPY",
+    "dunnhumby.transactions": "verified in place, no COPY",
+    "m5.calendar": "verified in place, no COPY",
+    "m5.sales_daily_total": "verified in place, no COPY",
+    "m5.sales_long": "verified in place, no COPY",
+    "m5.sell_prices": "verified in place, no COPY",
+    "m5.series": "verified in place, no COPY",
+    "olist.closed_deals": "verified in place, no COPY",
+    "olist.customer_rfm": "verified in place, no COPY",
+    "olist.customers": "verified in place, no COPY",
+    "olist.geolocation_by_zip": "verified in place, no COPY",
+    "olist.mql": "verified in place, no COPY",
+    "olist.order_items": "verified in place, no COPY",
+    "olist.order_payments_agg": "verified in place, no COPY",
+    "olist.orders": "verified in place, no COPY",
+    "olist.payments": "verified in place, no COPY",
+    "olist.products": "verified in place, no COPY",
+    "olist.reviews": "verified in place, no COPY",
+    "olist.sellers": "verified in place, no COPY"
+  },
+  "elapsed_seconds": 405.0,
+  "last_run": {
+    "alembic_revision": "baseline",
+    "elapsed_seconds": 105.5,
+    "resumed": false,
+    "scope": {
+      "sources": null,
+      "table": null
+    },
+    "tables": 30,
+    "tables_reused": [
+      "dataco.customers",
+      "dataco.order_items",
+      "dataco.orders",
+      "dataco.products",
+      "dunnhumby.campaign_contacts",
+      "dunnhumby.campaigns",
+      "dunnhumby.coupon_redemptions",
+      "dunnhumby.coupons",
+      "dunnhumby.household_rfm",
+      "dunnhumby.households",
+      "dunnhumby.products",
+      "dunnhumby.promo_exposure",
+      "dunnhumby.transactions",
+      "m5.calendar",
+      "m5.sales_daily_total",
+      "m5.sales_long",
+      "m5.sell_prices",
+      "m5.series",
+      "olist.closed_deals",
+      "olist.customer_rfm",
+      "olist.customers",
+      "olist.geolocation_by_zip",
+      "olist.mql",
+      "olist.order_items",
+      "olist.order_payments_agg",
+      "olist.orders",
+      "olist.payments",
+      "olist.products",
+      "olist.reviews",
+      "olist.sellers"
+    ],
+    "verify_only": true
+  },
+  "runs": [
+    {
+      "elapsed_seconds": 9.2,
+      "resumed": true,
+      "scope": {
+        "sources": null,
+        "table": null
+      },
+      "tables": 30,
+      "tables_reused": [
+        "dataco.customers",
+        "dataco.order_items",
+        "dataco.orders",
+        "dataco.products",
+        "dunnhumby.campaign_contacts",
+        "dunnhumby.campaigns",
+        "dunnhumby.coupon_redemptions",
+        "dunnhumby.coupons",
+        "dunnhumby.household_rfm",
+        "dunnhumby.households",
+        "dunnhumby.products",
+        "dunnhumby.promo_exposure",
+        "dunnhumby.transactions",
+        "m5.calendar",
+        "m5.sales_daily_total",
+        "m5.sales_long",
+        "m5.sell_prices",
+        "m5.series",
+        "olist.closed_deals",
+        "olist.customer_rfm",
+        "olist.customers",
+        "olist.geolocation_by_zip",
+        "olist.mql",
+        "olist.order_items",
+        "olist.order_payments_agg",
+        "olist.orders",
+        "olist.payments",
+        "olist.products",
+        "olist.reviews",
+        "olist.sellers"
+      ]
+    },
+    {
+      "elapsed_seconds": 0.7,
+      "resumed": true,
+      "scope": {
+        "sources": [
+          "olist"
+        ],
+        "table": null
+      },
+      "tables": 12,
+      "tables_reused": [
+        "olist.closed_deals",
+        "olist.customer_rfm",
+        "olist.customers",
+        "olist.geolocation_by_zip",
+        "olist.mql",
+        "olist.order_items",
+        "olist.order_payments_agg",
+        "olist.orders",
+        "olist.payments",
+        "olist.products",
+        "olist.reviews",
+        "olist.sellers"
+      ]
+    },
+    {
+      "elapsed_seconds": 0.4,
+      "resumed": true,
+      "scope": {
+        "sources": [
+          "olist"
+        ],
+        "table": null
+      },
+      "tables": 12,
+      "tables_reused": [
+        "olist.closed_deals",
+        "olist.customer_rfm",
+        "olist.customers",
+        "olist.geolocation_by_zip",
+        "olist.mql",
+        "olist.order_items",
+        "olist.order_payments_agg",
+        "olist.orders",
+        "olist.payments",
+        "olist.products",
+        "olist.reviews",
+        "olist.sellers"
+      ]
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 0.1,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "coupon_redemptions"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 0.1,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "coupon_redemptions"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 0.5,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "coupons"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 0.4,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "products"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 287.4,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "promo_exposure"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 0.7,
+      "resumed": false,
+      "scope": {
+        "sources": [
+          "dunnhumby"
+        ],
+        "table": "coupons"
+      },
+      "tables": 1,
+      "tables_reused": [],
+      "verify_only": false
+    },
+    {
+      "alembic_revision": "baseline",
+      "elapsed_seconds": 105.5,
+      "resumed": false,
+      "scope": {
+        "sources": null,
+        "table": null
+      },
+      "tables": 30,
+      "tables_reused": [
+        "dataco.customers",
+        "dataco.order_items",
+        "dataco.orders",
+        "dataco.products",
+        "dunnhumby.campaign_contacts",
+        "dunnhumby.campaigns",
+        "dunnhumby.coupon_redemptions",
+        "dunnhumby.coupons",
+        "dunnhumby.household_rfm",
+        "dunnhumby.households",
+        "dunnhumby.products",
+        "dunnhumby.promo_exposure",
+        "dunnhumby.transactions",
+        "m5.calendar",
+        "m5.sales_daily_total",
+        "m5.sales_long",
+        "m5.sell_prices",
+        "m5.series",
+        "olist.closed_deals",
+        "olist.customer_rfm",
+        "olist.customers",
+        "olist.geolocation_by_zip",
+        "olist.mql",
+        "olist.order_items",
+        "olist.order_payments_agg",
+        "olist.orders",
+        "olist.payments",
+        "olist.products",
+        "olist.reviews",
+        "olist.sellers"
+      ],
+      "verify_only": true
+    }
+  ],
+  "skipped": [],
+  "tables": [
+    {
+      "rows": 20652,
+      "seconds": 0.0,
+      "table": "dataco.customers"
+    },
+    {
+      "rows": 180519,
+      "seconds": 0.0,
+      "table": "dataco.order_items"
+    },
+    {
+      "rows": 65752,
+      "seconds": 0.0,
+      "table": "dataco.orders"
+    },
+    {
+      "rows": 118,
+      "seconds": 0.0,
+      "table": "dataco.products"
+    },
+    {
+      "rows": 7208,
+      "seconds": 0.0,
+      "table": "dunnhumby.campaign_contacts"
+    },
+    {
+      "rows": 30,
+      "seconds": 0.0,
+      "table": "dunnhumby.campaigns"
+    },
+    {
+      "rows": 2318,
+      "seconds": 0.0,
+      "table": "dunnhumby.coupon_redemptions"
+    },
+    {
+      "rows": 119384,
+      "seconds": 0.0,
+      "table": "dunnhumby.coupons"
+    },
+    {
+      "rows": 2500,
+      "seconds": 0.0,
+      "table": "dunnhumby.household_rfm"
+    },
+    {
+      "rows": 801,
+      "seconds": 0.0,
+      "table": "dunnhumby.households"
+    },
+    {
+      "rows": 92353,
+      "seconds": 0.0,
+      "table": "dunnhumby.products"
+    },
+    {
+      "rows": 36786524,
+      "seconds": 0.0,
+      "table": "dunnhumby.promo_exposure"
+    },
+    {
+      "rows": 2595732,
+      "seconds": 0.0,
+      "table": "dunnhumby.transactions"
+    },
+    {
+      "rows": 1969,
+      "seconds": 0.0,
+      "table": "m5.calendar"
+    },
+    {
+      "rows": 1941,
+      "seconds": 0.0,
+      "table": "m5.sales_daily_total"
+    },
+    {
+      "rows": 59181090,
+      "seconds": 0.0,
+      "table": "m5.sales_long"
+    },
+    {
+      "rows": 6841121,
+      "seconds": 0.0,
+      "table": "m5.sell_prices"
+    },
+    {
+      "rows": 30490,
+      "seconds": 0.0,
+      "table": "m5.series"
+    },
+    {
+      "rows": 842,
+      "seconds": 0.0,
+      "table": "olist.closed_deals"
+    },
+    {
+      "rows": 96096,
+      "seconds": 0.0,
+      "table": "olist.customer_rfm"
+    },
+    {
+      "rows": 99441,
+      "seconds": 0.0,
+      "table": "olist.customers"
+    },
+    {
+      "rows": 19015,
+      "seconds": 0.0,
+      "table": "olist.geolocation_by_zip"
+    },
+    {
+      "rows": 8000,
+      "seconds": 0.0,
+      "table": "olist.mql"
+    },
+    {
+      "rows": 112650,
+      "seconds": 0.0,
+      "table": "olist.order_items"
+    },
+    {
+      "rows": 99440,
+      "seconds": 0.0,
+      "table": "olist.order_payments_agg"
+    },
+    {
+      "rows": 99441,
+      "seconds": 0.0,
+      "table": "olist.orders"
+    },
+    {
+      "rows": 103886,
+      "seconds": 0.0,
+      "table": "olist.payments"
+    },
+    {
+      "rows": 32951,
+      "seconds": 0.0,
+      "table": "olist.products"
+    },
+    {
+      "rows": 99224,
+      "seconds": 0.0,
+      "table": "olist.reviews"
+    },
+    {
+      "rows": 3095,
+      "seconds": 0.0,
+      "table": "olist.sellers"
+    }
+  ],
+  "total_rows": 106704583
+}

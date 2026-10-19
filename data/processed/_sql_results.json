@@ -1,0 +1,4450 @@
+{
+  "query_count": 41,
+  "failure_count": 0,
+  "queries": [
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "customer_segments",
+      "question": "Consumer, Corporate and Home Office are DataCo's three segments. Segment value per order and per customer is the comparison that matters.",
+      "sql": "-- Consumer, Corporate and Home Office are DataCo's three segments. Segment\n-- value per order and per customer is the comparison that matters.\nSELECT\n    c.customer_segment                                       AS segment,\n    count(DISTINCT c.customer_id)                           AS customers,\n    count(DISTINCT o.order_id)                               AS orders,\n    round(sum(o.order_sales), 2)                             AS sales,\n    round(sum(o.order_profit), 2)                            AS profit,\n    round(100.0 * sum(o.order_profit) / sum(o.order_sales), 2) AS margin_pct,\n    round(sum(o.order_sales) / count(DISTINCT o.order_id), 2) AS avg_order_sales,\n    round(sum(o.order_sales) / count(DISTINCT c.customer_id), 2) AS sales_per_customer\nFROM dataco.orders o\nJOIN dataco.customers c USING (customer_id)\nGROUP BY 1\nORDER BY sales DESC;",
+      "columns": [
+        "segment",
+        "customers",
+        "orders",
+        "sales",
+        "profit",
+        "margin_pct",
+        "avg_order_sales",
+        "sales_per_customer"
+      ],
+      "rows": [
+        [
+          "Consumer",
+          10695,
+          34119,
+          "19095789.79",
+          "2073487.67",
+          "10.86",
+          "559.68",
+          "1785.49"
+        ],
+        [
+          "Corporate",
+          6239,
+          19856,
+          "11168406.63",
+          "1202574.96",
+          "10.77",
+          "562.47",
+          "1790.10"
+        ],
+        [
+          "Home Office",
+          3718,
+          11777,
+          "6520537.89",
+          "690840.34",
+          "10.59",
+          "553.67",
+          "1753.78"
+        ]
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "elapsed_ms": 423.4
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "discount_vs_margin",
+      "question": "Does discounting actually pay? Buckets order lines by the discount they carried so the relationship can be read without assuming one exists.",
+      "sql": "-- Does discounting actually pay? Buckets order lines by the discount they\n-- carried so the relationship can be read without assuming one exists.\nSELECT\n    CASE\n        WHEN order_item_discount_rate <= 0.00 THEN '1. no discount'\n        WHEN order_item_discount_rate <  0.15 THEN '2. 1-14% off'\n        WHEN order_item_discount_rate <  0.20 THEN '3. 15-19% off'\n        WHEN order_item_discount_rate <  0.30 THEN '4. 20-29% off'\n        WHEN order_item_discount_rate <  0.50 THEN '5. 30-49% off'\n        ELSE                              '6. 50%+ off'\n    END                                                      AS discount_band,\n    count(*)                                                 AS order_lines,\n    round(avg(order_item_discount_rate), 4)                 AS avg_discount_rate,\n    round(sum(sales), 2)                                     AS sales,\n    round(sum(order_profit_per_order), 2)                    AS profit,\n    round(100.0 * sum(order_profit_per_order) / sum(sales), 2) AS margin_pct,\n    round(avg(order_item_profit_ratio), 4)                  AS avg_profit_ratio\nFROM dataco.order_items\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "discount_band",
+        "order_lines",
+        "avg_discount_rate",
+        "sales",
+        "profit",
+        "margin_pct",
+        "avg_profit_ratio"
+      ],
+      "rows": [
+        [
+          "1. no discount",
+          10028,
+          "0.0000",
+          "2042369.14",
+          "267412.40",
+          "13.09",
+          "0.1275"
+        ],
+        [
+          "2. 1-14% off",
+          110317,
+          "0.0655",
+          "22477269.92",
+          "2522354.86",
+          "11.22",
+          "0.1212"
+        ],
+        [
+          "3. 15-19% off",
+          40116,
+          "0.1650",
+          "8176530.70",
+          "807926.25",
+          "9.88",
+          "0.1179"
+        ],
+        [
+          "4. 20-29% off",
+          20058,
+          "0.2250",
+          "4088564.55",
+          "369209.46",
+          "9.03",
+          "0.1197"
+        ]
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "elapsed_ms": 125.7
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "loss_making_orders",
+      "question": "Orders that lost money outright. If an operations review only looks at totals these disappear inside an average; counting them makes them arguable.",
+      "sql": "-- Orders that lost money outright. If an operations review only looks at totals\n-- these disappear inside an average; counting them makes them arguable.\nSELECT\n    CASE\n        WHEN order_profit >= 0    THEN '1. profitable or break-even'\n        WHEN order_profit > -100  THEN '2. small loss (0 to -100)'\n        WHEN order_profit > -500  THEN '3. moderate loss (-100 to -500)'\n        ELSE                           '4. large loss (below -500)'\n    END                                                      AS profit_band,\n    count(*)                                                 AS orders,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)      AS pct_of_orders,\n    round(sum(order_sales), 2)                               AS sales,\n    round(sum(order_profit), 2)                              AS profit,\n    min(order_profit)                                        AS worst_single_order\nFROM dataco.orders\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "profit_band",
+        "orders",
+        "pct_of_orders",
+        "sales",
+        "profit",
+        "worst_single_order"
+      ],
+      "rows": [
+        [
+          "1. profitable or break-even",
+          51844,
+          "78.85",
+          "28695834.71",
+          "6582106.76",
+          "0.0000"
+        ],
+        [
+          "2. small loss (0 to -100)",
+          6628,
+          "10.08",
+          "3076257.40",
+          "-266394.49",
+          "-99.9500"
+        ],
+        [
+          "3. moderate loss (-100 to -500)",
+          6069,
+          "9.23",
+          "3978527.62",
+          "-1434448.42",
+          "-499.1200"
+        ],
+        [
+          "4. large loss (below -500)",
+          1211,
+          "1.84",
+          "1034114.58",
+          "-914360.88",
+          "-4325.8500"
+        ]
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "elapsed_ms": 138.6
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "margin_by_department",
+      "question": "The central profitability question. DataCo is widely reported to be close to break-even overall; this shows whether that is uniform or hides a mix shift.",
+      "sql": "-- The central profitability question. DataCo is widely reported to be close to\n-- break-even overall; this shows whether that is uniform or hides a mix shift.\nSELECT\n    p.department_name                                        AS department,\n    count(DISTINCT p.product_card_id)                        AS products,\n    count(*)                                                 AS order_lines,\n    round(sum(i.sales), 2)                                   AS sales,\n    round(sum(i.order_profit_per_order), 2)                  AS profit,\n    round(100.0 * sum(i.order_profit_per_order) / sum(i.sales), 2) AS margin_pct,\n    round(sum(i.order_item_discount), 2)                     AS discount_given,\n    round(100.0 * sum(i.order_item_discount) / sum(i.sales), 2) AS discount_pct\nFROM dataco.order_items i\nJOIN dataco.products p USING (product_card_id)\nGROUP BY 1\nORDER BY sales DESC;",
+      "columns": [
+        "department",
+        "products",
+        "order_lines",
+        "sales",
+        "profit",
+        "margin_pct",
+        "discount_given",
+        "discount_pct"
+      ],
+      "rows": [
+        [
+          "Fan Shop",
+          9,
+          66861,
+          "17113870.54",
+          "1834155.43",
+          "10.72",
+          "1735317.51",
+          "10.14"
+        ],
+        [
+          "Apparel",
+          8,
+          48998,
+          "7976255.08",
+          "881882.93",
+          "11.06",
+          "808607.94",
+          "10.14"
+        ],
+        [
+          "Golf",
+          8,
+          33220,
+          "4609028.22",
+          "497523.56",
+          "10.79",
+          "466929.79",
+          "10.13"
+        ],
+        [
+          "Footwear",
+          15,
+          14525,
+          "4006498.77",
+          "410222.50",
+          "10.24",
+          "407033.10",
+          "10.16"
+        ],
+        [
+          "Outdoors",
+          53,
+          9686,
+          "1253351.44",
+          "145251.46",
+          "11.59",
+          "127400.13",
+          "10.16"
+        ],
+        [
+          "Technology",
+          3,
+          1465,
+          "1039598.96",
+          "113170.01",
+          "10.89",
+          "105769.72",
+          "10.17"
+        ],
+        [
+          "Fitness",
+          15,
+          2479,
+          "397050.89",
+          "46538.06",
+          "11.72",
+          "39893.63",
+          "10.05"
+        ],
+        [
+          "Discs Shop",
+          4,
+          2026,
+          "228887.73",
+          "24193.12",
+          "10.57",
+          "23213.73",
+          "10.14"
+        ],
+        [
+          "Health and Beauty ",
+          1,
+          362,
+          "106080.48",
+          "9493.63",
+          "8.95",
+          "10722.37",
+          "10.11"
+        ],
+        [
+          "Pet Shop",
+          1,
+          492,
+          "41524.80",
+          "3589.26",
+          "8.64",
+          "4206.50",
+          "10.13"
+        ],
+        [
+          "Book Shop",
+          1,
+          405,
+          "12587.40",
+          "883.01",
+          "7.02",
+          "1283.98",
+          "10.20"
+        ]
+      ],
+      "row_count": 11,
+      "truncated": false,
+      "elapsed_ms": 670.3
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "order_flow_by_month",
+      "question": "How did order volume and value move month by month? DataCo is a 2-year window, so this shows both the level and whether the business was growing.",
+      "sql": "-- How did order volume and value move month by month? DataCo is a 2-year\n-- window, so this shows both the level and whether the business was growing.\nSELECT\n    to_char(date_trunc('month', order_date), 'YYYY-MM')     AS month,\n    count(*)                                                 AS orders,\n    count(DISTINCT customer_id)                              AS customers,\n    round(sum(order_value), 2)                               AS order_value,\n    round(sum(order_sales), 2)                               AS order_sales,\n    round(sum(order_profit), 2)                              AS profit,\n    round(100.0 * sum(order_profit) / sum(order_sales), 2)   AS margin_pct,\n    round(avg(total_quantity), 2)                            AS avg_units_per_order\nFROM dataco.orders\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "month",
+        "orders",
+        "customers",
+        "order_value",
+        "order_sales",
+        "profit",
+        "margin_pct",
+        "avg_units_per_order"
+      ],
+      "rows": [
+        [
+          "2015-01",
+          1787,
+          1668,
+          "945382.15",
+          "1051590.06",
+          "111660.74",
+          "10.62",
+          "6.63"
+        ],
+        [
+          "2015-02",
+          1585,
+          1500,
+          "833012.42",
+          "927009.88",
+          "99140.66",
+          "10.69",
+          "6.59"
+        ],
+        [
+          "2015-03",
+          1781,
+          1654,
+          "944050.10",
+          "1051253.67",
+          "113778.21",
+          "10.82",
+          "6.77"
+        ],
+        [
+          "2015-04",
+          1710,
+          1596,
+          "912004.39",
+          "1014463.26",
+          "108083.68",
+          "10.65",
+          "6.60"
+        ],
+        [
+          "2015-05",
+          1776,
+          1654,
+          "943939.76",
+          "1050478.42",
+          "112147.90",
+          "10.68",
+          "6.70"
+        ],
+        [
+          "2015-06",
+          1725,
+          1616,
+          "920242.05",
+          "1024006.15",
+          "110147.16",
+          "10.76",
+          "6.49"
+        ],
+        [
+          "2015-07",
+          1763,
+          1628,
+          "932936.78",
+          "1038081.17",
+          "115624.06",
+          "11.14",
+          "6.69"
+        ],
+        [
+          "2015-08",
+          1762,
+          1650,
+          "925192.86",
+          "1029494.67",
+          "117979.77",
+          "11.46",
+          "6.59"
+        ],
+        [
+          "2015-09",
+          1706,
+          1608,
+          "914522.36",
+          "1018338.58",
+          "113467.94",
+          "11.14",
+          "6.66"
+        ],
+        [
+          "2015-10",
+          1775,
+          1635,
+          "943131.09",
+          "1049154.25",
+          "101757.87",
+          "9.70",
+          "6.59"
+        ],
+        [
+          "2015-11",
+          1729,
+          1604,
+          "924602.56",
+          "1029120.22",
+          "104427.36",
+          "10.15",
+          "6.63"
+        ],
+        [
+          "2015-12",
+          1805,
+          1685,
+          "950526.91",
+          "1057840.86",
+          "110641.55",
+          "10.46",
+          "6.53"
+        ],
+        [
+          "2016-01",
+          1772,
+          1643,
+          "940283.62",
+          "1046308.23",
+          "106780.95",
+          "10.21",
+          "6.54"
+        ],
+        [
+          "2016-02",
+          1650,
+          1525,
+          "870116.74",
+          "968542.83",
+          "86809.49",
+          "8.96",
+          "6.52"
+        ],
+        [
+          "2016-03",
+          1764,
+          1647,
+          "921487.72",
+          "1025853.10",
+          "101259.99",
+          "9.87",
+          "6.43"
+        ],
+        [
+          "2016-04",
+          1706,
+          1598,
+          "900492.91",
+          "1001211.56",
+          "114976.62",
+          "11.48",
+          "6.57"
+        ],
+        [
+          "2016-05",
+          1763,
+          1663,
+          "924978.21",
+          "1029400.18",
+          "110716.12",
+          "10.76",
+          "6.58"
+        ],
+        [
+          "2016-06",
+          1690,
+          1592,
+          "901448.00",
+          "1003059.53",
+          "104196.07",
+          "10.39",
+          "6.51"
+        ],
+        [
+          "2016-07",
+          1758,
+          1656,
+          "939216.39",
+          "1045715.60",
+          "119941.72",
+          "11.47",
+          "6.63"
+        ],
+        [
+          "2016-08",
+          1766,
+          1666,
+          "942408.93",
+          "1048200.23",
+          "110729.54",
+          "10.56",
+          "6.62"
+        ],
+        [
+          "2016-09",
+          1730,
+          1608,
+          "900371.62",
+          "1002397.02",
+          "123384.71",
+          "12.31",
+          "6.52"
+        ],
+        [
+          "2016-10",
+          1776,
+          1689,
+          "941882.27",
+          "1048130.53",
+          "116781.97",
+          "11.14",
+          "6.72"
+        ],
+        [
+          "2016-11",
+          1721,
+          1603,
+          "941197.35",
+          "1047590.12",
+          "109539.20",
+          "10.46",
+          "6.68"
+        ],
+        [
+          "2016-12",
+          1763,
+          1640,
+          "932112.88",
+          "1037408.15",
+          "105002.69",
+          "10.12",
+          "6.68"
+        ],
+        [
+          "2017-01",
+          1745,
+          1629,
+          "925472.61",
+          "1029698.00",
+          "114843.85",
+          "11.15",
+          "6.65"
+        ],
+        [
+          "2017-02",
+          1614,
+          1491,
+          "891924.28",
+          "992534.88",
+          "115111.07",
+          "11.60",
+          "6.86"
+        ],
+        [
+          "2017-03",
+          1782,
+          1674,
+          "942290.42",
+          "1048004.76",
+          "118688.90",
+          "11.33",
+          "6.55"
+        ],
+        [
+          "2017-04",
+          1739,
+          1610,
+          "932318.19",
+          "1038321.60",
+          "115961.06",
+          "11.17",
+          "6.43"
+        ],
+        [
+          "2017-05",
+          1763,
+          1654,
+          "993199.04",
+          "1105485.30",
+          "115014.64",
+          "10.40",
+          "6.26"
+        ],
+        [
+          "2017-06",
+          1676,
+          1578,
+          "927445.96",
+          "1032086.47",
+          "110399.29",
+          "10.70",
+          "6.08"
+        ],
+        [
+          "2017-07",
+          1776,
+          1662,
+          "992423.42",
+          "1104373.34",
+          "113026.70",
+          "10.23",
+          "6.24"
+        ],
+        [
+          "2017-08",
+          1768,
+          1637,
+          "996507.87",
+          "1109337.15",
+          "131501.16",
+          "11.85",
+          "6.28"
+        ],
+        [
+          "2017-09",
+          1723,
+          1620,
+          "1027111.72",
+          "1143775.09",
+          "122462.39",
+          "10.71",
+          "6.10"
+        ],
+        [
+          "2017-10",
+          2101,
+          2101,
+          "966081.41",
+          "1073994.16",
+          "113447.17",
+          "10.56",
+          "1.19"
+        ],
+        [
+          "2017-11",
+          2055,
+          2055,
+          "563393.47",
+          "626914.37",
+          "67791.25",
+          "10.81",
+          "1.00"
+        ],
+        [
+          "2017-12",
+          2124,
+          2124,
+          "452741.53",
+          "503910.81",
+          "65837.63",
+          "13.07",
+          "1.00"
+        ],
+        [
+          "2018-01",
+          2123,
+          2123,
+          "297952.05",
+          "331650.11",
+          "33841.89",
+          "10.20",
+          "1.00"
+        ]
+      ],
+      "row_count": 37,
+      "truncated": false,
+      "elapsed_ms": 733.0
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "order_status_mix",
+      "question": "Not every order completed, and the ones that did not are where the money quietly disappears. Reports value by terminal status.",
+      "sql": "-- Not every order completed, and the ones that did not are where the money\n-- quietly disappears. Reports value by terminal status.\nSELECT\n    order_status,\n    delivery_status,\n    count(*)                                                 AS orders,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)      AS pct_of_orders,\n    round(sum(order_sales), 2)                               AS sales,\n    round(sum(order_profit), 2)                              AS profit,\n    round(100.0 * sum(order_profit) / sum(order_sales), 2)  AS margin_pct\nFROM dataco.orders\nGROUP BY 1, 2\nORDER BY orders DESC;",
+      "columns": [
+        "order_status",
+        "delivery_status",
+        "orders",
+        "pct_of_orders",
+        "sales",
+        "profit",
+        "margin_pct"
+      ],
+      "rows": [
+        [
+          "COMPLETE",
+          "Late delivery",
+          12521,
+          "19.04",
+          "6926002.64",
+          "741421.11",
+          "10.70"
+        ],
+        [
+          "PENDING_PAYMENT",
+          "Late delivery",
+          8256,
+          "12.56",
+          "4650655.80",
+          "461717.83",
+          "9.93"
+        ],
+        [
+          "COMPLETE",
+          "Advance shipping",
+          5174,
+          "7.87",
+          "2899972.54",
+          "318714.58",
+          "10.99"
+        ],
+        [
+          "PROCESSING",
+          "Late delivery",
+          4494,
+          "6.83",
+          "2576403.71",
+          "282905.86",
+          "10.98"
+        ],
+        [
+          "PENDING",
+          "Late delivery",
+          4215,
+          "6.41",
+          "2384837.64",
+          "251303.90",
+          "10.54"
+        ],
+        [
+          "CLOSED",
+          "Late delivery",
+          4112,
+          "6.25",
+          "2270264.71",
+          "267919.62",
+          "11.80"
+        ],
+        [
+          "COMPLETE",
+          "Shipping on time",
+          4021,
+          "6.12",
+          "2269339.54",
+          "261600.06",
+          "11.53"
+        ],
+        [
+          "PENDING_PAYMENT",
+          "Advance shipping",
+          3421,
+          "5.20",
+          "1950934.31",
+          "220621.67",
+          "11.31"
+        ],
+        [
+          "PENDING_PAYMENT",
+          "Shipping on time",
+          2705,
+          "4.11",
+          "1505107.29",
+          "161470.74",
+          "10.73"
+        ],
+        [
+          "ON_HOLD",
+          "Late delivery",
+          2045,
+          "3.11",
+          "1098838.65",
+          "109625.95",
+          "9.98"
+        ],
+        [
+          "PROCESSING",
+          "Advance shipping",
+          1941,
+          "2.95",
+          "1107448.21",
+          "130195.41",
+          "11.76"
+        ],
+        [
+          "PENDING",
+          "Advance shipping",
+          1797,
+          "2.73",
+          "996486.91",
+          "101997.43",
+          "10.24"
+        ],
+        [
+          "CLOSED",
+          "Advance shipping",
+          1777,
+          "2.70",
+          "982549.75",
+          "104356.00",
+          "10.62"
+        ],
+        [
+          "SUSPECTED_FRAUD",
+          "Shipping canceled",
+          1488,
+          "2.26",
+          "825934.94",
+          "85136.71",
+          "10.31"
+        ],
+        [
+          "PROCESSING",
+          "Shipping on time",
+          1466,
+          "2.23",
+          "820211.74",
+          "81724.60",
+          "9.96"
+        ],
+        [
+          "CANCELED",
+          "Shipping canceled",
+          1367,
+          "2.08",
+          "744370.39",
+          "75345.63",
+          "10.12"
+        ],
+        [
+          "CLOSED",
+          "Shipping on time",
+          1360,
+          "2.07",
+          "769809.63",
+          "85705.47",
+          "11.13"
+        ],
+        [
+          "PENDING",
+          "Shipping on time",
+          1309,
+          "1.99",
+          "739208.24",
+          "82424.52",
+          "11.15"
+        ],
+        [
+          "ON_HOLD",
+          "Advance shipping",
+          858,
+          "1.30",
+          "496567.07",
+          "50883.62",
+          "10.25"
+        ],
+        [
+          "ON_HOLD",
+          "Shipping on time",
+          721,
+          "1.10",
+          "386136.95",
+          "48403.47",
+          "12.54"
+        ],
+        [
+          "PAYMENT_REVIEW",
+          "Late delivery",
+          405,
+          "0.62",
+          "219391.73",
+          "25157.41",
+          "11.47"
+        ],
+        [
+          "PAYMENT_REVIEW",
+          "Advance shipping",
+          159,
+          "0.24",
+          "84048.94",
+          "8456.57",
+          "10.06"
+        ],
+        [
+          "PAYMENT_REVIEW",
+          "Shipping on time",
+          140,
+          "0.21",
+          "80212.98",
+          "9814.81",
+          "12.24"
+        ]
+      ],
+      "row_count": 23,
+      "truncated": false,
+      "elapsed_ms": 55.1
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "revenue_by_market",
+      "question": "DataCo is a multinational. Market share shows how concentrated the operation is geographically before any per-country drill-down.",
+      "sql": "-- DataCo is a multinational. Market share shows how concentrated the operation\n-- is geographically before any per-country drill-down.\nSELECT\n    market,\n    count(DISTINCT order_region)                             AS regions,\n    count(DISTINCT order_country)                            AS countries,\n    count(*)                                                 AS orders,\n    round(sum(order_sales), 2)                               AS sales,\n    round(100.0 * sum(order_sales) / sum(sum(order_sales)) OVER (), 2)\n                                                              AS pct_of_sales,\n    round(avg(shipping_delay_days), 2)                       AS avg_delay_days,\n    round(100.0 * count(*) FILTER (WHERE is_late) / count(*), 2) AS pct_late\nFROM dataco.orders\nGROUP BY 1\nORDER BY sales DESC;",
+      "columns": [
+        "market",
+        "regions",
+        "countries",
+        "orders",
+        "sales",
+        "pct_of_sales",
+        "avg_delay_days",
+        "pct_late"
+      ],
+      "rows": [
+        [
+          "Europe",
+          4,
+          37,
+          18561,
+          "10872396.60",
+          "29.56",
+          "0.57",
+          "54.95"
+        ],
+        [
+          "LATAM",
+          3,
+          29,
+          17181,
+          "10277612.64",
+          "27.94",
+          "0.56",
+          "54.36"
+        ],
+        [
+          "Pacific Asia",
+          6,
+          47,
+          17577,
+          "8273743.58",
+          "22.49",
+          "0.58",
+          "55.30"
+        ],
+        [
+          "USCA",
+          5,
+          2,
+          8579,
+          "5066528.61",
+          "13.77",
+          "0.57",
+          "54.83"
+        ],
+        [
+          "Africa",
+          5,
+          49,
+          3854,
+          "2294452.88",
+          "6.24",
+          "0.55",
+          "54.13"
+        ]
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "elapsed_ms": 250.5
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "shipping_performance",
+      "question": "DataCo publishes a promise (days_for_shipment_scheduled) and an outcome (days_for_shipping_real). This measures the gap, by shipping mode.",
+      "sql": "-- DataCo publishes a promise (days_for_shipment_scheduled) and an outcome\n-- (days_for_shipping_real). This measures the gap, by shipping mode.\nSELECT\n    shipping_mode,\n    count(*)                                                 AS orders,\n    round(100.0 * count(*) FILTER (WHERE is_late) / count(*), 2) AS pct_late,\n    round(avg(days_for_shipment_scheduled), 2)              AS avg_days_promised,\n    round(avg(days_for_shipping_real), 2)                   AS avg_days_actual,\n    round(avg(shipping_delay_days), 2)                      AS avg_delay_days,\n    round(avg(lead_time_days)::numeric, 2)                  AS avg_lead_time_days,\n    max(shipping_delay_days)                                 AS worst_delay_days\nFROM dataco.orders\nGROUP BY 1\nORDER BY orders DESC;",
+      "columns": [
+        "shipping_mode",
+        "orders",
+        "pct_late",
+        "avg_days_promised",
+        "avg_days_actual",
+        "avg_delay_days",
+        "avg_lead_time_days",
+        "worst_delay_days"
+      ],
+      "rows": [
+        [
+          "Standard Class",
+          39324,
+          "38.13",
+          "4.00",
+          "4.00",
+          "0.00",
+          "4.00",
+          2
+        ],
+        [
+          "Second Class",
+          12778,
+          "76.72",
+          "2.00",
+          "4.00",
+          "2.00",
+          "4.00",
+          4
+        ],
+        [
+          "First Class",
+          10079,
+          "95.27",
+          "1.00",
+          "2.00",
+          "1.00",
+          "2.00",
+          1
+        ],
+        [
+          "Same Day",
+          3571,
+          "46.15",
+          "0.00",
+          "0.48",
+          "0.48",
+          "0.50",
+          1
+        ]
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "elapsed_ms": 56.9
+    },
+    {
+      "source": "dataco",
+      "file": "backend/sql/dataco/01_supply_chain_performance.sql",
+      "name": "worst_categories_by_margin",
+      "question": "The bottom of the margin table. A category can be high-volume and still lose money on every unit, which no revenue ranking would reveal.",
+      "sql": "-- The bottom of the margin table. A category can be high-volume and still lose\n-- money on every unit, which no revenue ranking would reveal.\nSELECT\n    p.category_name                                          AS category,\n    p.department_name                                        AS department,\n    count(DISTINCT p.product_card_id)                        AS products,\n    count(*)                                                 AS order_lines,\n    round(sum(i.sales), 2)                                   AS sales,\n    round(sum(i.order_profit_per_order), 2)                  AS profit,\n    round(100.0 * sum(i.order_profit_per_order) / sum(i.sales), 2) AS margin_pct,\n    count(*) FILTER (WHERE i.order_profit_per_order < 0)     AS lines_losing_money\nFROM dataco.order_items i\nJOIN dataco.products p USING (product_card_id)\nGROUP BY 1, 2\nHAVING sum(i.sales) > 0\nORDER BY margin_pct ASC\nLIMIT 12;",
+      "columns": [
+        "category",
+        "department",
+        "products",
+        "order_lines",
+        "sales",
+        "profit",
+        "margin_pct",
+        "lines_losing_money"
+      ],
+      "rows": [
+        [
+          "Strength Training",
+          "Footwear",
+          3,
+          111,
+          "54895.53",
+          "332.31",
+          "0.61",
+          18
+        ],
+        [
+          "As Seen on  TV!",
+          "Footwear",
+          1,
+          68,
+          "20597.94",
+          "714.43",
+          "3.47",
+          14
+        ],
+        [
+          "Men's Clothing",
+          "Apparel",
+          1,
+          208,
+          "43856.80",
+          "2006.04",
+          "4.57",
+          50
+        ],
+        [
+          "Basketball",
+          "Fitness",
+          3,
+          67,
+          "27099.33",
+          "1845.67",
+          "6.81",
+          11
+        ],
+        [
+          "Books ",
+          "Book Shop",
+          1,
+          405,
+          "12587.40",
+          "883.01",
+          "7.02",
+          78
+        ],
+        [
+          "Video Games",
+          "Discs Shop",
+          1,
+          838,
+          "33310.50",
+          "2717.52",
+          "8.16",
+          181
+        ],
+        [
+          "DVDs",
+          "Discs Shop",
+          1,
+          483,
+          "79395.54",
+          "6655.43",
+          "8.38",
+          102
+        ],
+        [
+          "Pet Supplies",
+          "Pet Shop",
+          1,
+          492,
+          "41524.80",
+          "3589.26",
+          "8.64",
+          104
+        ],
+        [
+          "Health and Beauty",
+          "Health and Beauty ",
+          1,
+          362,
+          "106080.48",
+          "9493.63",
+          "8.95",
+          85
+        ],
+        [
+          "Kids' Golf Clubs",
+          "Outdoors",
+          8,
+          384,
+          "98797.58",
+          "9045.84",
+          "9.16",
+          77
+        ],
+        [
+          "Shop By Sport",
+          "Golf",
+          3,
+          10984,
+          "1309522.02",
+          "129813.96",
+          "9.91",
+          2154
+        ],
+        [
+          "Golf Apparel",
+          "Outdoors",
+          3,
+          441,
+          "34969.75",
+          "3496.31",
+          "10.00",
+          88
+        ]
+      ],
+      "row_count": 12,
+      "truncated": false,
+      "elapsed_ms": 462.6
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "campaign_performance",
+      "question": "Dunn & Bradstreet ran 30 named campaigns. The control group matters: comparing contacted households against the panel AVERAGE is not a control at all, because campaigns were aimed at frequent shoppers, so the contacted group is pre-loaded with high spenders. This compares each campaign's contacted households against the households that were NEVER contacted by anything. WITH household_spend AS (",
+      "sql": "-- Dunn & Bradstreet ran 30 named campaigns. The control group matters: comparing\n-- contacted households against the panel AVERAGE is not a control at all, because\n-- campaigns were aimed at frequent shoppers, so the contacted group is pre-loaded\n-- with high spenders. This compares each campaign's contacted households against\n-- the households that were NEVER contacted by anything.\nWITH household_spend AS (\n    SELECT household_key, sum(sales_value) AS spend\n    FROM dunnhumby.transactions\n    GROUP BY 1\n),\never_contacted AS (\n    SELECT DISTINCT household_key FROM dunnhumby.campaign_contacts\n),\ncontrol AS (\n    SELECT avg(spend) AS avg_control_spend, count(*) AS control_households\n    FROM household_spend h\n    WHERE NOT EXISTS (SELECT 1 FROM ever_contacted e WHERE e.household_key = h.household_key)\n)\nSELECT\n    c.campaign,\n    c.description                                            AS campaign_name,\n    (c.end_day - c.start_day)                                AS duration_days,\n    count(DISTINCT cc.household_key)                         AS households_contacted,\n    round(avg(h.spend), 2)                                   AS avg_spend_contacted,\n    (SELECT round(avg_control_spend, 2) FROM control)        AS avg_spend_never_contacted,\n    round(avg(h.spend) - (SELECT avg_control_spend FROM control), 2)\n                                                           AS lift_vs_never_contacted\nFROM dunnhumby.campaigns c\nJOIN dunnhumby.campaign_contacts cc ON cc.campaign = c.campaign\nJOIN household_spend h ON h.household_key = cc.household_key\nGROUP BY 1, 2, 3\nORDER BY households_contacted DESC;",
+      "columns": [
+        "campaign",
+        "campaign_name",
+        "duration_days",
+        "households_contacted",
+        "avg_spend_contacted",
+        "avg_spend_never_contacted",
+        "lift_vs_never_contacted"
+      ],
+      "rows": [
+        [
+          18,
+          "TypeA",
+          55,
+          1133,
+          "5176.36",
+          "1028.54",
+          "4147.82"
+        ],
+        [
+          13,
+          "TypeA",
+          47,
+          1077,
+          "5358.69",
+          "1028.54",
+          "4330.14"
+        ],
+        [
+          8,
+          "TypeA",
+          48,
+          1076,
+          "5065.87",
+          "1028.54",
+          "4037.32"
+        ],
+        [
+          30,
+          "TypeA",
+          46,
+          361,
+          "5046.98",
+          "1028.54",
+          "4018.44"
+        ],
+        [
+          26,
+          "TypeA",
+          40,
+          332,
+          "5044.75",
+          "1028.54",
+          "4016.20"
+        ],
+        [
+          22,
+          "TypeB",
+          32,
+          276,
+          "7373.73",
+          "1028.54",
+          "6345.18"
+        ],
+        [
+          20,
+          "TypeC",
+          70,
+          244,
+          "7625.68",
+          "1028.54",
+          "6597.13"
+        ],
+        [
+          14,
+          "TypeC",
+          65,
+          224,
+          "7746.40",
+          "1028.54",
+          "6717.86"
+        ],
+        [
+          11,
+          "TypeB",
+          46,
+          214,
+          "7028.92",
+          "1028.54",
+          "6000.38"
+        ],
+        [
+          17,
+          "TypeB",
+          32,
+          202,
+          "7069.39",
+          "1028.54",
+          "6040.85"
+        ],
+        [
+          7,
+          "TypeB",
+          34,
+          198,
+          "6428.12",
+          "1028.54",
+          "5399.58"
+        ],
+        [
+          16,
+          "TypeB",
+          32,
+          188,
+          "7630.04",
+          "1028.54",
+          "6601.50"
+        ],
+        [
+          25,
+          "TypeB",
+          32,
+          187,
+          "8813.35",
+          "1028.54",
+          "7784.81"
+        ],
+        [
+          23,
+          "TypeB",
+          38,
+          183,
+          "8429.33",
+          "1028.54",
+          "7400.79"
+        ],
+        [
+          9,
+          "TypeB",
+          32,
+          176,
+          "5357.46",
+          "1028.54",
+          "4328.92"
+        ],
+        [
+          12,
+          "TypeB",
+          32,
+          170,
+          "7082.08",
+          "1028.54",
+          "6053.53"
+        ],
+        [
+          5,
+          "TypeB",
+          34,
+          166,
+          "7380.89",
+          "1028.54",
+          "6352.34"
+        ],
+        [
+          19,
+          "TypeB",
+          32,
+          130,
+          "6459.46",
+          "1028.54",
+          "5430.92"
+        ],
+        [
+          10,
+          "TypeB",
+          32,
+          123,
+          "7404.98",
+          "1028.54",
+          "6376.44"
+        ],
+        [
+          29,
+          "TypeB",
+          53,
+          118,
+          "4981.55",
+          "1028.54",
+          "3953.01"
+        ],
+        [
+          24,
+          "TypeB",
+          60,
+          100,
+          "7754.73",
+          "1028.54",
+          "6726.18"
+        ],
+        [
+          4,
+          "TypeB",
+          32,
+          81,
+          "6181.00",
+          "1028.54",
+          "5152.45"
+        ],
+        [
+          21,
+          "TypeB",
+          32,
+          65,
+          "8168.04",
+          "1028.54",
+          "7139.49"
+        ],
+        [
+          6,
+          "TypeC",
+          32,
+          65,
+          "8751.34",
+          "1028.54",
+          "7722.79"
+        ],
+        [
+          2,
+          "TypeB",
+          32,
+          48,
+          "4473.73",
+          "1028.54",
+          "3445.18"
+        ],
+        [
+          28,
+          "TypeB",
+          61,
+          17,
+          "7874.55",
+          "1028.54",
+          "6846.00"
+        ],
+        [
+          15,
+          "TypeC",
+          161,
+          17,
+          "5580.88",
+          "1028.54",
+          "4552.33"
+        ],
+        [
+          1,
+          "TypeB",
+          37,
+          13,
+          "4925.35",
+          "1028.54",
+          "3896.81"
+        ],
+        [
+          3,
+          "TypeC",
+          56,
+          12,
+          "8220.77",
+          "1028.54",
+          "7192.23"
+        ],
+        [
+          27,
+          "TypeC",
+          63,
+          12,
+          "8160.07",
+          "1028.54",
+          "7131.53"
+        ]
+      ],
+      "row_count": 30,
+      "truncated": false,
+      "elapsed_ms": 644.5
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "coupon_redemption",
+      "question": "Coupons were sent far more often than they were redeemed. The gap between coupons issued and redemptions is the redemption rate that actually matters.",
+      "sql": "-- Coupons were sent far more often than they were redeemed. The gap between\n-- coupons issued and redemptions is the redemption rate that actually matters.\n--\n-- coupons has 119,384 rows over only 1,135 distinct coupon_upc values, so\n-- joining it to the 2,318 redemption rows on coupon_upc alone multiplies the\n-- two together and reports millions of redemptions that never happened. Each\n-- side is therefore aggregated to coupon_upc BEFORE the join.\nWITH issued AS (\n    SELECT\n        coupon_upc,\n        count(*)                       AS product_campaign_rows,\n        count(DISTINCT campaign)       AS campaigns,\n        count(DISTINCT product_id)     AS products\n    FROM dunnhumby.coupons\n    GROUP BY 1\n),\nredeemed AS (\n    SELECT\n        coupon_upc,\n        count(*)                       AS redemption_rows,\n        count(DISTINCT household_key)  AS households_redeeming\n    FROM dunnhumby.coupon_redemptions\n    GROUP BY 1\n)\nSELECT\n    count(*)                                                  AS coupons_defined,\n    count(r.coupon_upc)                                       AS coupons_ever_redeemed,\n    round(100.0 * count(r.coupon_upc) / count(*), 2)          AS pct_of_coupons_redeemed,\n    COALESCE(sum(r.redemption_rows), 0)                       AS redemption_rows,\n    COALESCE(sum(r.households_redeeming), 0)                  AS households_redeeming,\n    sum(issued.product_campaign_rows)                         AS product_campaign_rows_issued\nFROM issued\nLEFT JOIN redeemed r USING (coupon_upc);",
+      "columns": [
+        "coupons_defined",
+        "coupons_ever_redeemed",
+        "pct_of_coupons_redeemed",
+        "redemption_rows",
+        "households_redeeming",
+        "product_campaign_rows_issued"
+      ],
+      "rows": [
+        [
+          1135,
+          556,
+          "48.99",
+          "2318",
+          "2229",
+          "119384"
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 100.2
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "demographic_coverage_gap",
+      "question": "The headline data-quality finding for this source. transaction_data.csv names 2,500 distinct households; hh_demographic.csv names only 801, and the file is byte-identical to the copy inside the publisher's own zip, so this is the publisher's coverage and not a truncated download. Any demographic split is therefore a minority-sample split and has to be described as one.",
+      "sql": "-- The headline data-quality finding for this source. transaction_data.csv names\n-- 2,500 distinct households; hh_demographic.csv names only 801, and the file\n-- is byte-identical to the copy inside the publisher's own zip, so this is the\n-- publisher's coverage and not a truncated download. Any demographic split is\n-- therefore a minority-sample split and has to be described as one.\nSELECT\n    (SELECT count(DISTINCT household_key) FROM dunnhumby.transactions)\n                                                           AS households_transacting,\n    (SELECT count(*) FROM dunnhumby.households)             AS households_with_demographics,\n    (SELECT count(DISTINCT t.household_key) FROM dunnhumby.transactions t\n       WHERE NOT EXISTS (SELECT 1 FROM dunnhumby.households h\n                         WHERE h.household_key = t.household_key))\n                                                           AS households_missing_demographics,\n    round(100.0 * (SELECT count(*) FROM dunnhumby.households)\n          / (SELECT count(DISTINCT household_key) FROM dunnhumby.transactions), 2)\n                                                           AS pct_with_demographics,\n    round(100.0 * (SELECT count(*) FROM dunnhumby.households)\n          / (SELECT count(*) FROM dunnhumby.household_rfm), 2)\n                                                           AS pct_of_rfm_households_described;",
+      "columns": [
+        "households_transacting",
+        "households_with_demographics",
+        "households_missing_demographics",
+        "pct_with_demographics",
+        "pct_of_rfm_households_described"
+      ],
+      "rows": [
+        [
+          2500,
+          801,
+          1699,
+          "32.04",
+          "32.04"
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 3498.2
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "discount_composition",
+      "question": "Retailer discounts versus manufacturer coupons. Splitting them shows who is actually funding the promotion, which a single discount total cannot.",
+      "sql": "-- Retailer discounts versus manufacturer coupons. Splitting them shows who is\n-- actually funding the promotion, which a single discount total cannot.\n--\n-- SIGN CONVENTION, measured not assumed. This source stores signs two different\n-- ways and both are real:\n--   * retail_disc / coupon_disc keep the RAW sign: a discount is NEGATIVE.\n--     retail_disc is negative on 1,303,026 of 2,595,732 lines (min -180,\n--     max +3.99); coupon_disc is negative on 36,422 lines (min -55.93, max 0).\n--   * total_discount was normalised during ETL to a POSITIVE magnitude:\n--     1,319,391 lines are > 0 (max 180) and only 10 lines are < 0.\n-- Bucketing therefore has to test retail_disc/coupon_disc for \"< 0\", not\n-- total_discount for \"> 0\", or every line lands in \"no discount\".\nSELECT\n    CASE\n        WHEN retail_disc < 0 AND coupon_disc < 0 THEN '1. retailer and coupon together'\n        WHEN retail_disc < 0                     THEN '2. retailer discount only'\n        WHEN coupon_disc < 0                     THEN '3. manufacturer coupon only'\n        ELSE                                         '4. no discount at all'\n    END                                                       AS discount_type,\n    count(*)                                                 AS basket_lines,\n    round(sum(gross_sales_value), 2)                         AS gross_sales,\n    round(abs(sum(total_discount)), 2)                       AS discount_given,\n    round(100.0 * abs(sum(total_discount)) / sum(gross_sales_value), 2) AS effective_discount_pct,\n    round(abs(sum(retail_disc))::numeric, 2)                 AS retailer_funded,\n    round(abs(sum(coupon_disc))::numeric, 2)                 AS manufacturer_funded,\n    round(100.0 * abs(sum(coupon_disc)::numeric) / NULLIF(abs(sum(total_discount)), 0), 2)\n                                                           AS pct_funded_by_manufacturer\nFROM dunnhumby.transactions\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "discount_type",
+        "basket_lines",
+        "gross_sales",
+        "discount_given",
+        "effective_discount_pct",
+        "retailer_funded",
+        "manufacturer_funded",
+        "pct_funded_by_manufacturer"
+      ],
+      "rows": [
+        [
+          "1. retailer and coupon together",
+          20049,
+          "131908.67",
+          "57354.62",
+          "43.48",
+          "31848.09",
+          "20714.16",
+          "36.12"
+        ],
+        [
+          "2. retailer discount only",
+          1282977,
+          "5348033.40",
+          "1366495.28",
+          "25.55",
+          "1366495.28",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "3. manufacturer coupon only",
+          16373,
+          "77531.46",
+          "24680.82",
+          "31.83",
+          "0.00",
+          "21897.38",
+          "88.72"
+        ],
+        [
+          "4. no discount at all",
+          1276333,
+          "3948511.74",
+          "8.53",
+          "0.00",
+          "8.53",
+          "0.00",
+          "0.00"
+        ]
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "elapsed_ms": 3773.4
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "exposure_grid_density",
+      "question": "Why the query above has to restrict. Most of the 36.8 million row exposure grid corresponds to no sale in that product, store and week at all.",
+      "sql": "-- Why the query above has to restrict. Most of the 36.8 million row exposure\n-- grid corresponds to no sale in that product, store and week at all.\nSELECT\n    count(*)                                                 AS exposure_rows,\n    count(*) FILTER (WHERE s.product_id IS NOT NULL)         AS rows_matching_a_sale,\n    count(*) FILTER (WHERE s.product_id IS NULL)             AS rows_with_no_sale,\n    round(100.0 * count(*) FILTER (WHERE s.product_id IS NULL) / count(*), 2)\n                                                           AS pct_of_grid_with_no_sale\nFROM dunnhumby.promo_exposure p\nLEFT JOIN (\n    SELECT DISTINCT product_id, store_id, week_no FROM dunnhumby.transactions\n) s USING (product_id, store_id, week_no);",
+      "columns": [
+        "exposure_rows",
+        "rows_matching_a_sale",
+        "rows_with_no_sale",
+        "pct_of_grid_with_no_sale"
+      ],
+      "rows": [
+        [
+          36786524,
+          483935,
+          36302589,
+          "98.68"
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 47948.6
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "exposure_vs_sales",
+      "question": "Do products that appear on display actually sell more?",
+      "sql": "-- Do products that appear on display actually sell more?\n--\n-- Two traps here, both measured rather than guessed. First, promo_exposure is a\n-- dense product x store x week grid: 36.8 million rows, and 98.9% of those\n-- product-store-weeks have NO matching transaction at all. Comparing averages\n-- across the whole grid compares mostly zeros, which says nothing about display.\n-- Second, a display comparison over the whole grid also mixes in the fact that\n-- retailers promote things they already expect to sell, so any gap is an\n-- association and not a causal lift. The query therefore restricts to the\n-- product-store-weeks that actually sold, and says so.\nWITH sold AS (\n    SELECT product_id, store_id, week_no, sum(quantity) AS units\n    FROM dunnhumby.transactions\n    GROUP BY 1, 2, 3\n)\nSELECT\n    CASE WHEN p.display = '0' THEN 'not on display' ELSE 'on display' END AS display_status,\n    count(*)                                                 AS product_store_weeks_with_sales,\n    round(avg(s.units), 2)                                   AS avg_weekly_units,\n    round(sum(s.units), 0)                                   AS total_units,\n    round(100.0 * count(*) / (SELECT count(*) FROM dunnhumby.promo_exposure), 4)\n                                                           AS pct_of_all_exposure_rows\nFROM dunnhumby.promo_exposure p\nJOIN sold s USING (product_id, store_id, week_no)\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "display_status",
+        "product_store_weeks_with_sales",
+        "avg_weekly_units",
+        "total_units",
+        "pct_of_all_exposure_rows"
+      ],
+      "rows": [
+        [
+          "not on display",
+          246883,
+          "1.68",
+          "413684",
+          "0.6711"
+        ],
+        [
+          "on display",
+          237052,
+          "1.61",
+          "382445",
+          "0.6444"
+        ]
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "elapsed_ms": 102594.0
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "household_activity_over_time",
+      "question": "How many households actually shopped, week by week? The panel is fixed at 2,500 households, so what moves is participation, not population.",
+      "sql": "-- How many households actually shopped, week by week? The panel is fixed at\n-- 2,500 households, so what moves is participation, not population.\nSELECT\n    week_no,\n    count(DISTINCT household_key)                            AS households_shopping,\n    count(DISTINCT basket_id)                                 AS baskets,\n    count(*)                                                  AS basket_lines,\n    round(avg(quantity), 2)                                   AS avg_units_per_line,\n    round(sum(gross_sales_value), 2)                          AS gross_sales,\n    round(sum(sales_value), 2)                                AS net_sales,\n    round(sum(gross_sales_value) / NULLIF(count(DISTINCT basket_id), 0), 2)\n                                                           AS avg_basket_value\nFROM dunnhumby.transactions\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "week_no",
+        "households_shopping",
+        "baskets",
+        "basket_lines",
+        "avg_units_per_line",
+        "gross_sales",
+        "net_sales",
+        "avg_basket_value"
+      ],
+      "rows": [
+        [
+          1,
+          88,
+          142,
+          1881,
+          "1.25",
+          "6267.90",
+          "5211.16",
+          "44.14"
+        ],
+        [
+          2,
+          175,
+          324,
+          3675,
+          "1.97",
+          "12995.64",
+          "10821.35",
+          "40.11"
+        ],
+        [
+          3,
+          228,
+          482,
+          4803,
+          "12.03",
+          "16137.79",
+          "13498.20",
+          "33.48"
+        ],
+        [
+          4,
+          270,
+          545,
+          5379,
+          "14.29",
+          "18938.68",
+          "15965.99",
+          "34.75"
+        ],
+        [
+          5,
+          370,
+          757,
+          7168,
+          "14.19",
+          "24205.58",
+          "20139.82",
+          "31.98"
+        ],
+        [
+          6,
+          433,
+          861,
+          8896,
+          "12.52",
+          "30205.59",
+          "24923.90",
+          "35.08"
+        ],
+        [
+          7,
+          491,
+          999,
+          8980,
+          "32.01",
+          "32969.38",
+          "28073.97",
+          "33.00"
+        ],
+        [
+          8,
+          530,
+          1086,
+          10428,
+          "59.95",
+          "37644.30",
+          "31793.77",
+          "34.66"
+        ],
+        [
+          9,
+          622,
+          1212,
+          10585,
+          "79.67",
+          "37255.33",
+          "31244.17",
+          "30.74"
+        ],
+        [
+          10,
+          708,
+          1553,
+          13543,
+          "76.09",
+          "51861.25",
+          "42994.38",
+          "33.39"
+        ],
+        [
+          11,
+          846,
+          1823,
+          16706,
+          "78.67",
+          "60051.45",
+          "51011.30",
+          "32.94"
+        ],
+        [
+          12,
+          905,
+          1926,
+          17512,
+          "70.71",
+          "63759.38",
+          "53187.30",
+          "33.10"
+        ],
+        [
+          13,
+          972,
+          2203,
+          18634,
+          "84.58",
+          "65897.79",
+          "55203.01",
+          "29.91"
+        ],
+        [
+          14,
+          1119,
+          2433,
+          21884,
+          "72.39",
+          "76481.74",
+          "62875.20",
+          "31.44"
+        ],
+        [
+          15,
+          1156,
+          2743,
+          23590,
+          "88.00",
+          "91154.86",
+          "74261.29",
+          "33.23"
+        ],
+        [
+          16,
+          1309,
+          2840,
+          26859,
+          "69.68",
+          "94430.57",
+          "79135.01",
+          "33.25"
+        ],
+        [
+          17,
+          1371,
+          3048,
+          26325,
+          "82.80",
+          "93698.19",
+          "79556.35",
+          "30.74"
+        ],
+        [
+          18,
+          1313,
+          3080,
+          25532,
+          "109.01",
+          "89260.78",
+          "75968.18",
+          "28.98"
+        ],
+        [
+          19,
+          1268,
+          2973,
+          24234,
+          "103.66",
+          "85298.90",
+          "72536.88",
+          "28.69"
+        ],
+        [
+          20,
+          1319,
+          3091,
+          29872,
+          "83.88",
+          "103327.21",
+          "86108.90",
+          "33.43"
+        ],
+        [
+          21,
+          1312,
+          2999,
+          27011,
+          "110.62",
+          "97939.56",
+          "83262.33",
+          "32.66"
+        ],
+        [
+          22,
+          1313,
+          3092,
+          25794,
+          "126.57",
+          "92571.90",
+          "79133.82",
+          "29.94"
+        ],
+        [
+          23,
+          1290,
+          2947,
+          25158,
+          "120.95",
+          "88960.42",
+          "76069.35",
+          "30.19"
+        ],
+        [
+          24,
+          1335,
+          3112,
+          27862,
+          "108.16",
+          "105622.69",
+          "88706.10",
+          "33.94"
+        ],
+        [
+          25,
+          1345,
+          3094,
+          28722,
+          "99.41",
+          "104576.00",
+          "88926.82",
+          "33.80"
+        ],
+        [
+          26,
+          1303,
+          2891,
+          25642,
+          "103.53",
+          "92725.78",
+          "79208.92",
+          "32.07"
+        ],
+        [
+          27,
+          1266,
+          2845,
+          26944,
+          "114.51",
+          "94046.54",
+          "79909.08",
+          "33.06"
+        ],
+        [
+          28,
+          1286,
+          2783,
+          25179,
+          "110.75",
+          "91210.97",
+          "78556.20",
+          "32.77"
+        ],
+        [
+          29,
+          1331,
+          2997,
+          28468,
+          "95.30",
+          "105341.22",
+          "89026.98",
+          "35.15"
+        ],
+        [
+          30,
+          1285,
+          2894,
+          25852,
+          "95.52",
+          "93835.48",
+          "80131.86",
+          "32.42"
+        ],
+        [
+          31,
+          1278,
+          2820,
+          25950,
+          "103.85",
+          "92950.97",
+          "77643.88",
+          "32.96"
+        ],
+        [
+          32,
+          1280,
+          2910,
+          24965,
+          "115.24",
+          "89885.94",
+          "76723.95",
+          "30.89"
+        ],
+        [
+          33,
+          1305,
+          2957,
+          27563,
+          "102.11",
+          "101667.74",
+          "85802.29",
+          "34.38"
+        ],
+        [
+          34,
+          1292,
+          2871,
+          26533,
+          "101.62",
+          "97393.38",
+          "81676.13",
+          "33.92"
+        ],
+        [
+          35,
+          1262,
+          2785,
+          27377,
+          "102.44",
+          "98766.83",
+          "82983.83",
+          "35.46"
+        ],
+        [
+          36,
+          1325,
+          3022,
+          27046,
+          "99.55",
+          "98812.17",
+          "84083.89",
+          "32.70"
+        ],
+        [
+          37,
+          1316,
+          2958,
+          28395,
+          "109.86",
+          "102637.45",
+          "87324.25",
+          "34.70"
+        ],
+        [
+          38,
+          1284,
+          2894,
+          30239,
+          "89.61",
+          "106723.48",
+          "90906.21",
+          "36.88"
+        ],
+        [
+          39,
+          1295,
+          2883,
+          26469,
+          "97.33",
+          "96505.00",
+          "82427.45",
+          "33.47"
+        ],
+        [
+          40,
+          1278,
+          2794,
+          26544,
+          "107.55",
+          "104422.91",
+          "89984.76",
+          "37.37"
+        ],
+        [
+          41,
+          1308,
+          2982,
+          26718,
+          "84.82",
+          "98247.84",
+          "83638.59",
+          "32.95"
+        ],
+        [
+          42,
+          1318,
+          2919,
+          31454,
+          "78.46",
+          "109240.08",
+          "93370.29",
+          "37.42"
+        ],
+        [
+          43,
+          1289,
+          2849,
+          27398,
+          "100.27",
+          "98810.26",
+          "83953.87",
+          "34.68"
+        ],
+        [
+          44,
+          1318,
+          3001,
+          28203,
+          "99.30",
+          "99302.96",
+          "83093.82",
+          "33.09"
+        ],
+        [
+          45,
+          1290,
+          2861,
+          26311,
+          "113.13",
+          "94858.76",
+          "79682.33",
+          "33.16"
+        ],
+        [
+          46,
+          1335,
+          3086,
+          31105,
+          "78.55",
+          "111938.63",
+          "95878.08",
+          "36.27"
+        ],
+        [
+          47,
+          1286,
+          2926,
+          29093,
+          "103.85",
+          "104204.57",
+          "89835.46",
+          "35.61"
+        ],
+        [
+          48,
+          1300,
+          2866,
+          25714,
+          "94.19",
+          "94213.86",
+          "80300.28",
+          "32.87"
+        ],
+        [
+          49,
+          1305,
+          2944,
+          29066,
+          "92.89",
+          "100959.11",
+          "85805.50",
+          "34.29"
+        ],
+        [
+          50,
+          1332,
+          2932,
+          29467,
+          "91.55",
+          "106397.77",
+          "90219.68",
+          "36.29"
+        ]
+      ],
+      "row_count": 102,
+      "truncated": true,
+      "elapsed_ms": 19875.5
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "household_participation_rate",
+      "question": "How concentrated is shopping in a few weeks? A panel dataset can look healthy on totals while most households visit only a handful of times all year.",
+      "sql": "-- How concentrated is shopping in a few weeks? A panel dataset can look healthy\n-- on totals while most households visit only a handful of times all year.\nSELECT\n    count(*)                                                  AS households_with_basket,\n    round(avg(transactions_per_household), 2)                AS avg_transactions,\n    min(transactions_per_household)                           AS min_transactions,\n    max(transactions_per_household)                           AS max_transactions,\n    round(avg(total_spend), 2)                                AS avg_total_spend,\n    round(avg(active_days), 2)                                AS avg_active_days,\n    round(avg(transactions_per_household) FILTER (WHERE household_key IN (\n            SELECT household_key FROM dunnhumby.households)), 2)\n                                                           AS avg_tx_households_with_demographics,\n    round(avg(transactions_per_household) FILTER (WHERE household_key NOT IN (\n            SELECT household_key FROM dunnhumby.households)), 2)\n                                                           AS avg_tx_households_without_demographics\nFROM (\n    SELECT\n        household_key,\n        count(DISTINCT basket_id) AS transactions_per_household,\n        count(DISTINCT day)      AS active_days,\n        sum(sales_value)         AS total_spend\n    FROM dunnhumby.transactions\n    GROUP BY 1\n) h;",
+      "columns": [
+        "households_with_basket",
+        "avg_transactions",
+        "min_transactions",
+        "max_transactions",
+        "avg_total_spend",
+        "avg_active_days",
+        "avg_tx_households_with_demographics",
+        "avg_tx_households_without_demographics"
+      ],
+      "rows": [
+        [
+          2500,
+          "110.59",
+          1,
+          1300,
+          "3222.99",
+          "90.21",
+          "175.20",
+          "80.13"
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 85906.8
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "promo_exposure_coverage",
+      "question": "What share of product-store-weeks were on display or in a mailer. display and mailer are text codes in the source ('0','6','A','D'), not numbers, so they are reported as counts per code rather than summed.",
+      "sql": "-- What share of product-store-weeks were on display or in a mailer. display and\n-- mailer are text codes in the source ('0','6','A','D'), not numbers, so they\n-- are reported as counts per code rather than summed.\nSELECT\n    display,\n    count(*)                                                 AS product_store_weeks,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)       AS pct_of_exposure_rows\nFROM dunnhumby.promo_exposure\nGROUP BY 1\nORDER BY 2 DESC;",
+      "columns": [
+        "display",
+        "product_store_weeks",
+        "pct_of_exposure_rows"
+      ],
+      "rows": [
+        [
+          "0",
+          21038745,
+          "57.19"
+        ],
+        [
+          "9",
+          2699467,
+          "7.34"
+        ],
+        [
+          "5",
+          2575289,
+          "7.00"
+        ],
+        [
+          "7",
+          2362118,
+          "6.42"
+        ],
+        [
+          "3",
+          2073738,
+          "5.64"
+        ],
+        [
+          "6",
+          1816021,
+          "4.94"
+        ],
+        [
+          "2",
+          1812840,
+          "4.93"
+        ],
+        [
+          "1",
+          1102141,
+          "3.00"
+        ],
+        [
+          "A",
+          713180,
+          "1.94"
+        ],
+        [
+          "4",
+          592985,
+          "1.61"
+        ]
+      ],
+      "row_count": 10,
+      "truncated": false,
+      "elapsed_ms": 15303.7
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "rfm_segment_value",
+      "question": "The panel's RFM segmentation. Value per household by segment shows which segment actually carries the panel rather than which is largest.",
+      "sql": "-- The panel's RFM segmentation. Value per household by segment shows which\n-- segment actually carries the panel rather than which is largest.\nSELECT\n    classification_3                                         AS segment,\n    count(*)                                                  AS households,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)       AS pct_of_households,\n    round(avg(recency_days), 2)                              AS avg_recency_days,\n    round(avg(frequency), 2)                                 AS avg_frequency,\n    round(avg(monetary), 2)                                  AS avg_monetary,\n    round(sum(monetary), 2)                                  AS total_monetary,\n    round(100.0 * sum(monetary) / sum(sum(monetary)) OVER (), 2) AS pct_of_panel_value\nFROM dunnhumby.household_rfm\nGROUP BY 1\nORDER BY total_monetary DESC;",
+      "columns": [
+        "segment",
+        "households",
+        "pct_of_households",
+        "avg_recency_days",
+        "avg_frequency",
+        "avg_monetary",
+        "total_monetary",
+        "pct_of_panel_value"
+      ],
+      "rows": [
+        [
+          null,
+          1699,
+          "67.96",
+          "34.12",
+          "80.13",
+          "2095.20",
+          "3559746.82",
+          "44.18"
+        ],
+        [
+          "Level5",
+          192,
+          "7.68",
+          "6.43",
+          "167.83",
+          "5702.35",
+          "1094852.10",
+          "13.59"
+        ],
+        [
+          "Level4",
+          172,
+          "6.88",
+          "6.73",
+          "172.33",
+          "4802.01",
+          "825945.47",
+          "10.25"
+        ],
+        [
+          "Level6",
+          96,
+          "3.84",
+          "9.02",
+          "149.13",
+          "5822.53",
+          "558962.90",
+          "6.94"
+        ],
+        [
+          "Level3",
+          77,
+          "3.08",
+          "7.73",
+          "197.84",
+          "4938.07",
+          "380231.38",
+          "4.72"
+        ],
+        [
+          "Level1",
+          61,
+          "2.44",
+          "8.93",
+          "209.43",
+          "5559.61",
+          "339136.30",
+          "4.21"
+        ],
+        [
+          "Level2",
+          74,
+          "2.96",
+          "8.77",
+          "164.07",
+          "4097.12",
+          "303187.20",
+          "3.76"
+        ],
+        [
+          "Level8",
+          38,
+          "1.52",
+          "12.34",
+          "201.18",
+          "7912.06",
+          "300658.10",
+          "3.73"
+        ],
+        [
+          "Level9",
+          30,
+          "1.20",
+          "6.77",
+          "165.13",
+          "8394.84",
+          "251845.22",
+          "3.13"
+        ],
+        [
+          "Level7",
+          34,
+          "1.36",
+          "5.88",
+          "186.56",
+          "5927.74",
+          "201543.17",
+          "2.50"
+        ],
+        [
+          "Level12",
+          11,
+          "0.44",
+          "1.91",
+          "218.00",
+          "10789.90",
+          "118688.90",
+          "1.47"
+        ],
+        [
+          "Level10",
+          11,
+          "0.44",
+          "1.45",
+          "190.64",
+          "8548.46",
+          "94033.09",
+          "1.17"
+        ],
+        [
+          "Level11",
+          5,
+          "0.20",
+          "2.20",
+          "114.20",
+          "5726.49",
+          "28632.43",
+          "0.36"
+        ]
+      ],
+      "row_count": 13,
+      "truncated": false,
+      "elapsed_ms": 12.4
+    },
+    {
+      "source": "dunnhumby",
+      "file": "backend/sql/dunnhumby/01_household_behaviour.sql",
+      "name": "sales_mix_by_department",
+      "question": "Which parts of the store carry the business. Department is the top level of the dunnhumby product hierarchy (manufacturer > brand > category > commodity).",
+      "sql": "-- Which parts of the store carry the business. Department is the top level of\n-- the dunnhumby product hierarchy (manufacturer > brand > category > commodity).\nSELECT\n    p.department,\n    count(DISTINCT p.product_id)                              AS products,\n    count(*)                                                  AS basket_lines,\n    round(sum(t.quantity), 0)                                 AS units,\n    round(sum(t.gross_sales_value), 2)                        AS gross_sales,\n    round(sum(t.sales_value), 2)                              AS net_sales,\n    round(100.0 * sum(t.sales_value) / sum(sum(t.sales_value)) OVER (), 2)\n                                                           AS pct_of_net_sales,\n    round(sum(t.total_discount), 2)                           AS discount_given,\n    round(100.0 * sum(t.total_discount) / sum(t.gross_sales_value), 2)\n                                                           AS discount_rate_pct\nFROM dunnhumby.transactions t\nJOIN dunnhumby.products p USING (product_id)\nGROUP BY 1\nORDER BY net_sales DESC;",
+      "columns": [
+        "department",
+        "products",
+        "basket_lines",
+        "units",
+        "gross_sales",
+        "net_sales",
+        "pct_of_net_sales",
+        "discount_given",
+        "discount_rate_pct"
+      ],
+      "rows": [
+        [
+          "GROCERY",
+          39019,
+          1646076,
+          "2194762",
+          "4940586.00",
+          "4093814.14",
+          "50.81",
+          "846771.86",
+          "17.14"
+        ],
+        [
+          "DRUG GM",
+          31523,
+          277232,
+          "353844",
+          "1167637.95",
+          "1055358.03",
+          "13.10",
+          "112279.92",
+          "9.62"
+        ],
+        [
+          "PRODUCE",
+          3117,
+          257290,
+          "319993",
+          "626356.42",
+          "557452.11",
+          "6.92",
+          "68904.31",
+          "11.00"
+        ],
+        [
+          "MEAT",
+          2544,
+          88416,
+          "119113",
+          "725543.29",
+          "548786.81",
+          "6.81",
+          "176756.48",
+          "24.36"
+        ],
+        [
+          "KIOSK-GAS",
+          16,
+          22059,
+          "221254887",
+          "561447.72",
+          "544222.28",
+          "6.75",
+          "17225.44",
+          "3.07"
+        ],
+        [
+          "MEAT-PCKGD",
+          2427,
+          111957,
+          "148148",
+          "533351.46",
+          "412436.77",
+          "5.12",
+          "120914.69",
+          "22.67"
+        ],
+        [
+          "DELI",
+          2354,
+          62787,
+          "67026",
+          "283524.27",
+          "260866.51",
+          "3.24",
+          "22657.76",
+          "7.99"
+        ],
+        [
+          "PASTRY",
+          2149,
+          38179,
+          "49820",
+          "139390.00",
+          "121739.86",
+          "1.51",
+          "17650.14",
+          "12.66"
+        ],
+        [
+          "MISC SALES TRAN",
+          88,
+          6050,
+          "36080860",
+          "122995.73",
+          "119960.04",
+          "1.49",
+          "3035.69",
+          "2.47"
+        ],
+        [
+          "NUTRITION",
+          2913,
+          32164,
+          "43253",
+          "110121.08",
+          "97669.04",
+          "1.21",
+          "12452.04",
+          "11.31"
+        ],
+        [
+          "SEAFOOD-PCKGD",
+          563,
+          11216,
+          "14003",
+          "84728.53",
+          "63093.62",
+          "0.78",
+          "21634.91",
+          "25.53"
+        ],
+        [
+          "FLORAL",
+          938,
+          4524,
+          "5586",
+          "40853.39",
+          "39653.34",
+          "0.49",
+          "1200.05",
+          "2.94"
+        ],
+        [
+          "COSMETICS",
+          3007,
+          7692,
+          "7984",
+          "39669.16",
+          "32360.37",
+          "0.40",
+          "7308.79",
+          "18.42"
+        ],
+        [
+          "SALAD BAR",
+          48,
+          9516,
+          "10659",
+          "31834.39",
+          "30953.30",
+          "0.38",
+          "881.09",
+          "2.77"
+        ],
+        [
+          "SEAFOOD",
+          369,
+          4093,
+          "4555",
+          "35967.55",
+          "29496.92",
+          "0.37",
+          "6470.63",
+          "17.99"
+        ],
+        [
+          "SPIRITS",
+          377,
+          2119,
+          "2290",
+          "21670.88",
+          "21670.88",
+          "0.27",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "MISC. TRANS.",
+          490,
+          2351,
+          "3520",
+          "11002.99",
+          "10678.69",
+          "0.13",
+          "324.30",
+          "2.95"
+        ],
+        [
+          "GARDEN CENTER",
+          128,
+          720,
+          "1336",
+          "8699.92",
+          "7667.82",
+          "0.10",
+          "1032.10",
+          "11.86"
+        ],
+        [
+          "TRAVEL & LEISUR",
+          28,
+          862,
+          "950",
+          "2794.69",
+          "2550.38",
+          "0.03",
+          "244.31",
+          "8.74"
+        ],
+        [
+          "CHEF SHOPPE",
+          14,
+          766,
+          "875",
+          "2384.12",
+          "2290.80",
+          "0.03",
+          "93.32",
+          "3.91"
+        ],
+        [
+          "RESTAURANT",
+          102,
+          465,
+          "504",
+          "2039.51",
+          "1986.76",
+          "0.02",
+          "52.75",
+          "2.59"
+        ],
+        [
+          "COUP/STR & MFG",
+          39,
+          817,
+          "1011",
+          "1280.52",
+          "1027.72",
+          "0.01",
+          "252.80",
+          "19.74"
+        ],
+        [
+          "FROZEN GROCERY",
+          23,
+          251,
+          "297",
+          "686.72",
+          "653.26",
+          "0.01",
+          "33.46",
+          "4.87"
+        ],
+        [
+          "AUTOMOTIVE",
+          2,
+          65,
+          "67",
+          "452.66",
+          "452.66",
+          "0.01",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "RX",
+          9,
+          14,
+          "15",
+          "159.56",
+          "159.56",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "GM MERCH EXP",
+          3,
+          49,
+          "54",
+          "104.07",
+          "101.10",
+          "0.00",
+          "2.97",
+          "2.85"
+        ],
+        [
+          "DAIRY DELI",
+          3,
+          53,
+          "77",
+          "75.30",
+          "73.23",
+          "0.00",
+          "2.07",
+          "2.75"
+        ],
+        [
+          "CNTRL/STORE SUP",
+          4,
+          21,
+          "22",
+          "49.05",
+          "49.05",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "PHOTO",
+          2,
+          17,
+          "19",
+          "52.56",
+          "41.40",
+          "0.00",
+          "11.16",
+          "21.23"
+        ],
+        [
+          "DELI/SNACK BAR",
+          2,
+          11,
+          "12",
+          "36.08",
+          "36.08",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "VIDEO",
+          2,
+          3,
+          "3",
+          "34.77",
+          "34.77",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "POSTAL CENTER",
+          3,
+          20,
+          "28",
+          "24.40",
+          "24.01",
+          "0.00",
+          "0.39",
+          "1.60"
+        ],
+        [
+          "VIDEO RENTAL",
+          3,
+          5,
+          "11",
+          "34.40",
+          "21.46",
+          "0.00",
+          "12.94",
+          "37.62"
+        ],
+        [
+          "PHARMACY SUPPLY",
+          1,
+          6,
+          "8",
+          "19.92",
+          "16.92",
+          "0.00",
+          "3.00",
+          "15.06"
+        ],
+        [
+          "PORK",
+          1,
+          2,
+          "2",
+          "15.70",
+          "15.70",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "TOYS",
+          3,
+          5,
+          "6",
+          "13.04",
+          "9.84",
+          "0.00",
+          "3.20",
+          "24.54"
+        ],
+        [
+          "HBC",
+          1,
+          4,
+          "4",
+          "10.76",
+          "9.42",
+          "0.00",
+          "1.34",
+          "12.45"
+        ],
+        [
+          "CHARITABLE CONT",
+          2,
+          2,
+          "3",
+          "9.98",
+          "7.74",
+          "0.00",
+          "2.24",
+          "22.44"
+        ],
+        [
+          "PROD-WHS SALES",
+          2,
+          4,
+          "4",
+          "7.52",
+          "7.52",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "MEAT-WHSE",
+          1,
+          6,
+          "7",
+          "7.00",
+          "7.00",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "HOUSEWARES",
+          1,
+          1,
+          "1",
+          "2.99",
+          "2.99",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "GRO BAKERY",
+          2,
+          2,
+          "2",
+          "2.18",
+          "2.18",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          "ELECT &PLUMBING",
+          1,
+          1,
+          "1",
+          "1.00",
+          "1.00",
+          "0.00",
+          "0.00",
+          "0.00"
+        ],
+        [
+          " ",
+          15,
+          7839,
+          "0",
+          "10306.04",
+          "0.00",
+          "0.00",
+          "10306.04",
+          "100.00"
+        ]
+      ],
+      "row_count": 44,
+      "truncated": false,
+      "elapsed_ms": 18766.9
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "demand_scale_by_hierarchy",
+      "question": "How big is each part of the hierarchy? M5 is famously small on the shelf and huge on volume, so item counts and unit counts are reported together.",
+      "sql": "-- How big is each part of the hierarchy? M5 is famously small on the shelf and\n-- huge on volume, so item counts and unit counts are reported together.\nSELECT\n    dept_id,\n    cat_id,\n    count(DISTINCT id)                                        AS series,\n    count(DISTINCT item_id)                                   AS items,\n    count(DISTINCT store_id)                                  AS stores,\n    round(sum(sales), 0)                                      AS units,\n    round(avg(sales), 2)                                      AS avg_units_per_series_day,\n    round(100.0 * sum(sales) / sum(sum(sales)) OVER (), 2)   AS pct_of_all_units\nFROM m5.sales_long\nGROUP BY 1, 2\nORDER BY units DESC;",
+      "columns": [
+        "dept_id",
+        "cat_id",
+        "series",
+        "items",
+        "stores",
+        "units",
+        "avg_units_per_series_day",
+        "pct_of_all_units"
+      ],
+      "rows": [
+        [
+          "FOODS_3",
+          "FOODS",
+          8230,
+          823,
+          10,
+          "32937002",
+          "2.06",
+          "49.21"
+        ],
+        [
+          "HOUSEHOLD_1",
+          "HOUSEHOLD",
+          5320,
+          532,
+          10,
+          "11722853",
+          "1.14",
+          "17.52"
+        ],
+        [
+          "FOODS_2",
+          "FOODS",
+          3980,
+          398,
+          10,
+          "7795025",
+          "1.01",
+          "11.65"
+        ],
+        [
+          "HOBBIES_1",
+          "HOBBIES",
+          4160,
+          416,
+          10,
+          "5699014",
+          "0.71",
+          "8.52"
+        ],
+        [
+          "FOODS_1",
+          "FOODS",
+          2160,
+          216,
+          10,
+          "5190400",
+          "1.24",
+          "7.76"
+        ],
+        [
+          "HOUSEHOLD_2",
+          "HOUSEHOLD",
+          5150,
+          515,
+          10,
+          "3041237",
+          "0.30",
+          "4.54"
+        ],
+        [
+          "HOBBIES_2",
+          "HOBBIES",
+          1490,
+          149,
+          10,
+          "541642",
+          "0.19",
+          "0.81"
+        ]
+      ],
+      "row_count": 7,
+      "truncated": false,
+      "elapsed_ms": 197100.9
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "event_day_impact",
+      "question": "M5's calendar flags holidays (Super Bowl, Christmas, Black Friday). This compares flagged days with ordinary ones, which is the first thing a forecaster needs to know about its own calendar feature.",
+      "sql": "-- M5's calendar flags holidays (Super Bowl, Christmas, Black Friday). This\n-- compares flagged days with ordinary ones, which is the first thing a\n-- forecaster needs to know about its own calendar feature.\nSELECT\n    CASE\n        WHEN c.event_name_1 IS NULL AND c.event_name_2 IS NULL THEN 'no event flagged'\n        WHEN c.event_name_1 IS NOT NULL                       THEN 'one event'\n        ELSE                                                        'two events'\n    END                                                       AS event_count,\n    count(*)                                                  AS days,\n    round(avg(t.total_units), 0)                              AS avg_units_per_day,\n    round(avg(t.total_units) / (\n            SELECT avg(total_units) FROM m5.sales_daily_total), 2)\n                                                           AS vs_average_day\nFROM m5.sales_daily_total t\nJOIN m5.calendar c USING (d_num)\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "event_count",
+        "days",
+        "avg_units_per_day",
+        "vs_average_day"
+      ],
+      "rows": [
+        [
+          "no event flagged",
+          1783,
+          "34609",
+          "1.00"
+        ],
+        [
+          "one event",
+          158,
+          "33030",
+          "0.96"
+        ]
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "elapsed_ms": 47.4
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "intermittency",
+      "question": "The single most important fact for choosing a forecasting method. M5 series are famously intermittent: most series sell zero on most days, so a mean forecast and a naive \"same as yesterday\" behave very differently here.",
+      "sql": "-- The single most important fact for choosing a forecasting method. M5 series\n-- are famously intermittent: most series sell zero on most days, so a mean\n-- forecast and a naive \"same as yesterday\" behave very differently here.\nSELECT\n    count(*)                                                  AS series_days,\n    count(*) FILTER (WHERE sales = 0)                         AS zero_sales_days,\n    round(100.0 * count(*) FILTER (WHERE sales = 0) / count(*), 2)\n                                                           AS pct_zero_sales_days,\n    round(avg(sales), 3)                                      AS avg_units,\n    count(*) FILTER (WHERE sales > 0)                         AS nonzero_sales_days,\n    round(avg(sales) FILTER (WHERE sales > 0), 3)             AS avg_units_on_selling_days,\n    max(sales)                                                AS max_units_one_day\nFROM m5.sales_long;",
+      "columns": [
+        "series_days",
+        "zero_sales_days",
+        "pct_zero_sales_days",
+        "avg_units",
+        "nonzero_sales_days",
+        "avg_units_on_selling_days",
+        "max_units_one_day"
+      ],
+      "rows": [
+        [
+          59181090,
+          40241819,
+          "68.00",
+          "1.131",
+          18939271,
+          "3.534",
+          763
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 23330.9
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "intermittency_by_series",
+      "question": "Intermittency is not uniform across series, and an aggregate percentage hides that. This buckets each series by the share of days it sold nothing. WITH per_series AS (",
+      "sql": "-- Intermittency is not uniform across series, and an aggregate percentage hides\n-- that. This buckets each series by the share of days it sold nothing.\nWITH per_series AS (\n    SELECT\n        id,\n        count(*)                                   AS days,\n        count(*) FILTER (WHERE sales = 0)          AS zero_days,\n        sum(sales)                                 AS units\n    FROM m5.sales_long\n    GROUP BY 1\n)\nSELECT\n    CASE\n        WHEN 100.0 * zero_days / days >= 90 THEN '1. silent 90%+ of days'\n        WHEN 100.0 * zero_days / days >= 70 THEN '2. silent 70-89% of days'\n        WHEN 100.0 * zero_days / days >= 40 THEN '3. silent 40-69% of days'\n        WHEN 100.0 * zero_days / days >  0  THEN '4. sells something most days'\n        ELSE                                      '5. never zero'\n    END                                           AS intermittency_band,\n    count(*)                                      AS series,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2) AS pct_of_series,\n    round(sum(units), 0)                          AS total_units,\n    round(100.0 * sum(units) / sum(sum(units)) OVER (), 2) AS pct_of_all_units\nFROM per_series\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "intermittency_band",
+        "series",
+        "pct_of_series",
+        "total_units",
+        "pct_of_all_units"
+      ],
+      "rows": [
+        [
+          "1. silent 90%+ of days",
+          5133,
+          "16.84",
+          "838027",
+          "1.25"
+        ],
+        [
+          "2. silent 70-89% of days",
+          11591,
+          "38.02",
+          "7283331",
+          "10.88"
+        ],
+        [
+          "3. silent 40-69% of days",
+          9610,
+          "31.52",
+          "21524246",
+          "32.16"
+        ],
+        [
+          "4. sells something most days",
+          4156,
+          "13.63",
+          "37281569",
+          "55.70"
+        ]
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "elapsed_ms": 15180.0
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "price_and_demand",
+      "question": "Does a higher sell price go with lower demand? Prices live in m5.sell_prices per store, item and wm_yr_wk, so the daily facts are first collapsed to the same weekly grain before joining - joining 59 million daily rows to the price table on a daily key that the price table does not have is both wrong and slow. WITH weekly AS (",
+      "sql": "-- Does a higher sell price go with lower demand? Prices live in m5.sell_prices\n-- per store, item and wm_yr_wk, so the daily facts are first collapsed to the\n-- same weekly grain before joining - joining 59 million daily rows to the price\n-- table on a daily key that the price table does not have is both wrong and slow.\nWITH weekly AS (\n    SELECT\n        s.store_id,\n        s.item_id,\n        c.wm_yr_wk,\n        sum(s.sales) AS units\n    FROM m5.sales_long s\n    JOIN m5.calendar c USING (d_num)\n    GROUP BY 1, 2, 3\n),\npriced AS (\n    SELECT\n        w.store_id,\n        w.item_id,\n        w.wm_yr_wk,\n        w.units,\n        p.sell_price\n    FROM weekly w\n    JOIN m5.sell_prices p\n      ON p.store_id = w.store_id\n     AND p.item_id  = w.item_id\n     AND p.wm_yr_wk = w.wm_yr_wk\n)\nSELECT\n    CASE\n        WHEN sell_price <= 0        THEN '1. non-positive price'\n        WHEN sell_price <  1        THEN '2. under 1'\n        WHEN sell_price <  3        THEN '3. 1 to 3'\n        WHEN sell_price <  5        THEN '4. 3 to 5'\n        WHEN sell_price <  10       THEN '5. 5 to 10'\n        ELSE                             '6. 10 and over'\n    END                                               AS price_band,\n    count(*)                                          AS item_store_weeks,\n    round(avg(sell_price), 2)                         AS avg_price,\n    round(avg(units), 2)                              AS avg_weekly_units,\n    round(100.0 * count(*) FILTER (WHERE units = 0) / count(*), 2)\n                                                      AS pct_weeks_with_no_sales\nFROM priced\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "price_band",
+        "item_store_weeks",
+        "avg_price",
+        "avg_weekly_units",
+        "pct_weeks_with_no_sales"
+      ],
+      "rows": [
+        [
+          "2. under 1",
+          470027,
+          "0.78",
+          "25.11",
+          "18.74"
+        ],
+        [
+          "3. 1 to 3",
+          2676027,
+          "2.23",
+          "13.33",
+          "20.75"
+        ],
+        [
+          "4. 3 to 5",
+          1634942,
+          "4.14",
+          "6.74",
+          "23.30"
+        ],
+        [
+          "5. 5 to 10",
+          1546465,
+          "7.10",
+          "4.58",
+          "29.65"
+        ],
+        [
+          "6. 10 and over",
+          391700,
+          "14.15",
+          "3.41",
+          "32.25"
+        ]
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "elapsed_ms": 165899.3
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "store_comparison",
+      "question": "All ten stores carry exactly the same 3,049 series, which makes this a clean like-for-like comparison. CA_3 sells more than double CA_4, so \"Walmart demand\" is meaningless without naming the store.",
+      "sql": "-- All ten stores carry exactly the same 3,049 series, which makes this a clean\n-- like-for-like comparison. CA_3 sells more than double CA_4, so \"Walmart demand\"\n-- is meaningless without naming the store.\nSELECT\n    store_id,\n    count(DISTINCT id)                                        AS series,\n    round(sum(sales), 0)                                      AS total_units,\n    round(100.0 * sum(sales) / sum(sum(sales)) OVER (), 2)   AS pct_of_units,\n    round(avg(sales), 3)                                      AS avg_units_per_series_day,\n    min(date)                                                 AS first_date,\n    max(date)                                                 AS last_date\nFROM m5.sales_long\nJOIN m5.calendar USING (d_num)\nGROUP BY 1\nORDER BY total_units DESC;",
+      "columns": [
+        "store_id",
+        "series",
+        "total_units",
+        "pct_of_units",
+        "avg_units_per_series_day",
+        "first_date",
+        "last_date"
+      ],
+      "rows": [
+        [
+          "CA_3",
+          3049,
+          "11363540",
+          "16.98",
+          "1.920",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "CA_1",
+          3049,
+          "7832248",
+          "11.70",
+          "1.323",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "TX_2",
+          3049,
+          "7329642",
+          "10.95",
+          "1.239",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "WI_2",
+          3049,
+          "6697988",
+          "10.01",
+          "1.132",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "WI_3",
+          3049,
+          "6542557",
+          "9.78",
+          "1.106",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "TX_3",
+          3049,
+          "6205940",
+          "9.27",
+          "1.049",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "CA_2",
+          3049,
+          "5818395",
+          "8.69",
+          "0.983",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "TX_1",
+          3049,
+          "5692823",
+          "8.51",
+          "0.962",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "WI_1",
+          3049,
+          "5261506",
+          "7.86",
+          "0.889",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ],
+        [
+          "CA_4",
+          3049,
+          "4182534",
+          "6.25",
+          "0.707",
+          "2011-01-29 00:00:00",
+          "2016-05-22 00:00:00"
+        ]
+      ],
+      "row_count": 10,
+      "truncated": false,
+      "elapsed_ms": 174158.1
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "weekday_seasonality",
+      "question": "Retail demand is weekly before it is anything else. This is the weekday seasonality a forecaster has to model, measured on the full daily total rather than on a sample. M5 numbers weekdays from 1 = Saturday.",
+      "sql": "-- Retail demand is weekly before it is anything else. This is the weekday\n-- seasonality a forecaster has to model, measured on the full daily total rather\n-- than on a sample. M5 numbers weekdays from 1 = Saturday.\nSELECT\n    c.wday,\n    c.weekday,\n    count(*)                                                  AS days,\n    round(avg(t.total_units), 0)                              AS avg_units_per_day,\n    min(t.total_units)                                        AS min_units,\n    max(t.total_units)                                        AS max_units,\n    round(100.0 * sum(t.total_units) / sum(sum(t.total_units)) OVER (), 2)\n                                                           AS pct_of_all_units\nFROM m5.sales_daily_total t\nJOIN m5.calendar c USING (d_num)\nGROUP BY 1, 2\nORDER BY 1;",
+      "columns": [
+        "wday",
+        "weekday",
+        "days",
+        "avg_units_per_day",
+        "min_units",
+        "max_units",
+        "pct_of_all_units"
+      ],
+      "rows": [
+        [
+          1,
+          "Saturday",
+          278,
+          "41706",
+          25292,
+          56340,
+          "17.32"
+        ],
+        [
+          2,
+          "Sunday",
+          278,
+          "41304",
+          13,
+          59921,
+          "17.16"
+        ],
+        [
+          3,
+          "Monday",
+          277,
+          "32995",
+          20004,
+          47580,
+          "13.66"
+        ],
+        [
+          4,
+          "Tuesday",
+          277,
+          "30500",
+          11,
+          44314,
+          "12.62"
+        ],
+        [
+          5,
+          "Wednesday",
+          277,
+          "30130",
+          20,
+          43999,
+          "12.47"
+        ],
+        [
+          6,
+          "Thursday",
+          277,
+          "30321",
+          20,
+          47028,
+          "12.55"
+        ],
+        [
+          7,
+          "Friday",
+          277,
+          "34357",
+          14,
+          54154,
+          "14.22"
+        ]
+      ],
+      "row_count": 7,
+      "truncated": false,
+      "elapsed_ms": 67.8
+    },
+    {
+      "source": "m5",
+      "file": "backend/sql/m5/01_demand_forecasting.sql",
+      "name": "yearly_trend",
+      "question": "How did demand move across the 5.4-year window? Any forecast has to start from the level and direction actually observed, not an assumed trend.",
+      "sql": "-- How did demand move across the 5.4-year window? Any forecast has to start\n-- from the level and direction actually observed, not an assumed trend.\nSELECT\n    c.year,\n    count(*)                                                  AS days,\n    round(sum(t.total_units), 0)                              AS total_units,\n    round(avg(t.total_units), 0)                              AS avg_units_per_day,\n    round(avg(t.total_units) FILTER (WHERE c.wday = 6), 0)   AS avg_saturday_units,\n    round(avg(t.total_units) FILTER (WHERE c.wday = 7), 0)   AS avg_sunday_units\nFROM m5.sales_daily_total t\nJOIN m5.calendar c USING (d_num)\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "year",
+        "days",
+        "total_units",
+        "avg_units_per_day",
+        "avg_saturday_units",
+        "avg_sunday_units"
+      ],
+      "rows": [
+        [
+          2011,
+          337,
+          "8856585",
+          "26281",
+          "23301",
+          "26732"
+        ],
+        [
+          2012,
+          366,
+          "12061837",
+          "32956",
+          "28957",
+          "33101"
+        ],
+        [
+          2013,
+          365,
+          "13135753",
+          "35988",
+          "31615",
+          "36185"
+        ],
+        [
+          2014,
+          365,
+          "13089776",
+          "35862",
+          "31138",
+          "35456"
+        ],
+        [
+          2015,
+          365,
+          "13800811",
+          "37810",
+          "33536",
+          "37071"
+        ],
+        [
+          2016,
+          143,
+          "5982411",
+          "41835",
+          "36708",
+          "40935"
+        ]
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "elapsed_ms": 53.4
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "customer_repeat_behaviour",
+      "question": "Does anyone come back?",
+      "sql": "-- Does anyone come back?\n--\n-- GROUPING IS THE WHOLE QUESTION HERE. olist.orders.customer_id is the primary\n-- key of olist.customers, so it is unique BY CONSTRUCTION - one row per order.\n-- Counting distinct customer_id therefore always returns the order count and\n-- makes repeat purchasing impossible to see; an earlier draft of this query\n-- returned exactly 1.000 orders per customer for that reason alone. The person is\n-- identified by customer_unique_id, which repeats across orders.\nWITH per_customer AS (\n    SELECT\n        c.customer_unique_id,\n        count(*)                              AS orders,\n        count(DISTINCT date_trunc('month', o.purchase_date)) AS active_months\n    FROM olist.orders o\n    JOIN olist.customers c USING (customer_id)\n    GROUP BY 1\n)\nSELECT\n    (SELECT count(*) FROM olist.orders)                     AS orders,\n    count(*)                                                AS distinct_people,\n    round((SELECT count(*) FROM olist.orders)::numeric / count(*), 3)\n                                                          AS orders_per_person,\n    count(*) FILTER (WHERE orders = 1)                     AS people_ordering_once,\n    round(100.0 * count(*) FILTER (WHERE orders = 1) / count(*), 2)\n                                                          AS pct_people_ordering_once,\n    count(*) FILTER (WHERE orders >= 2)                    AS people_ordering_twice_plus,\n    round(100.0 * count(*) FILTER (WHERE orders >= 2) / count(*), 2)\n                                                          AS pct_people_returning,\n    max(orders)                                            AS most_orders_by_one_person\nFROM per_customer;",
+      "columns": [
+        "orders",
+        "distinct_people",
+        "orders_per_person",
+        "people_ordering_once",
+        "pct_people_ordering_once",
+        "people_ordering_twice_plus",
+        "pct_people_returning",
+        "most_orders_by_one_person"
+      ],
+      "rows": [
+        [
+          99441,
+          96096,
+          "1.035",
+          93099,
+          "96.88",
+          2997,
+          "3.12",
+          17
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 280.9
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "delay_distribution",
+      "question": "On-time deliveries are an average; the tail is what generates complaints. This buckets the delivered orders by how far past the estimate they landed.",
+      "sql": "-- On-time deliveries are an average; the tail is what generates complaints.\n-- This buckets the delivered orders by how far past the estimate they landed.\nSELECT\n    CASE\n        WHEN delay_days <= 0    THEN '1. on or before estimate'\n        WHEN delay_days <= 1    THEN '2. up to 1 day late'\n        WHEN delay_days <= 3    THEN '3. 2-3 days late'\n        WHEN delay_days <= 7    THEN '4. 4-7 days late'\n        WHEN delay_days <= 14   THEN '5. 8-14 days late'\n        ELSE                         '6. more than 14 days late'\n    END                                                     AS delay_band,\n    count(*)                                              AS orders,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)     AS pct_of_delivered\nFROM olist.orders\nWHERE is_delivered AND delay_days IS NOT NULL\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "delay_band",
+        "orders",
+        "pct_of_delivered"
+      ],
+      "rows": [
+        [
+          "1. on or before estimate",
+          88644,
+          "91.89"
+        ],
+        [
+          "2. up to 1 day late",
+          1292,
+          "1.34"
+        ],
+        [
+          "3. 2-3 days late",
+          1370,
+          "1.42"
+        ],
+        [
+          "4. 4-7 days late",
+          1819,
+          "1.89"
+        ],
+        [
+          "5. 8-14 days late",
+          1790,
+          "1.86"
+        ],
+        [
+          "6. more than 14 days late",
+          1555,
+          "1.61"
+        ]
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "elapsed_ms": 44.4
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "delivery_performance",
+      "question": "How reliable are Olist's delivery promises? Compares what was promised against what actually happened, and separates \"late\" from \"so late it matters\". delay_days <= 0 means delivered on or before the estimate.",
+      "sql": "-- How reliable are Olist's delivery promises? Compares what was promised against\n-- what actually happened, and separates \"late\" from \"so late it matters\".\n-- delay_days <= 0 means delivered on or before the estimate.\nSELECT\n    o.is_delivered,\n    count(*)                                              AS orders,\n    count(*) FILTER (WHERE o.delay_days <= 0)              AS on_or_before_estimate,\n    round(100.0 * count(*) FILTER (WHERE o.delay_days <= 0) / count(*), 2)\n                                                          AS pct_on_time,\n    round(avg(o.delay_days)::numeric, 2)                  AS avg_delay_days,\n    round(avg(o.delivery_days)::numeric, 2)               AS avg_delivery_days,\n    round(avg(o.estimated_days)::numeric, 2)              AS avg_promised_days,\n    round(max(o.delay_days)::numeric, 0)                  AS worst_delay_days\nFROM olist.orders o\nWHERE o.is_delivered\nGROUP BY 1\nORDER BY 1 DESC;",
+      "columns": [
+        "is_delivered",
+        "orders",
+        "on_or_before_estimate",
+        "pct_on_time",
+        "avg_delay_days",
+        "avg_delivery_days",
+        "avg_promised_days",
+        "worst_delay_days"
+      ],
+      "rows": [
+        [
+          true,
+          96478,
+          88644,
+          "91.88",
+          "-11.18",
+          "12.56",
+          "23.74",
+          "189"
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 90.3
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "geography_revenue_concentration",
+      "question": "Where is the demand? Uses the order's own destination, not the seller's, and reports how much revenue sits in states with no geolocation mapping at all.",
+      "sql": "-- Where is the demand? Uses the order's own destination, not the seller's, and\n-- reports how much revenue sits in states with no geolocation mapping at all.\nSELECT\n    COALESCE(c.customer_state, '(no state)')              AS destination_state,\n    count(*)                                              AS orders,\n    round(sum(a.payment_total), 2)                        AS revenue,\n    round(100.0 * sum(a.payment_total) / sum(sum(a.payment_total)) OVER (), 2)\n                                                          AS pct_of_revenue\nFROM olist.orders o\nJOIN olist.order_payments_agg a USING (order_id)\nLEFT JOIN olist.customers c USING (customer_id)\nGROUP BY 1\nORDER BY revenue DESC\nLIMIT 12;",
+      "columns": [
+        "destination_state",
+        "orders",
+        "revenue",
+        "pct_of_revenue"
+      ],
+      "rows": [
+        [
+          "SP",
+          41745,
+          "5998226.96",
+          "37.47"
+        ],
+        [
+          "RJ",
+          12852,
+          "2144379.69",
+          "13.39"
+        ],
+        [
+          "MG",
+          11635,
+          "1872257.26",
+          "11.70"
+        ],
+        [
+          "RS",
+          5466,
+          "890898.54",
+          "5.57"
+        ],
+        [
+          "PR",
+          5045,
+          "811156.38",
+          "5.07"
+        ],
+        [
+          "SC",
+          3637,
+          "623086.43",
+          "3.89"
+        ],
+        [
+          "BA",
+          3380,
+          "616645.82",
+          "3.85"
+        ],
+        [
+          "DF",
+          2140,
+          "355141.08",
+          "2.22"
+        ],
+        [
+          "GO",
+          2020,
+          "350092.31",
+          "2.19"
+        ],
+        [
+          "ES",
+          2033,
+          "325967.55",
+          "2.04"
+        ],
+        [
+          "PE",
+          1652,
+          "324850.44",
+          "2.03"
+        ],
+        [
+          "CE",
+          1336,
+          "279464.03",
+          "1.75"
+        ]
+      ],
+      "row_count": 12,
+      "truncated": false,
+      "elapsed_ms": 185.0
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "monthly_revenue_trend",
+      "question": "How did order volume and revenue move month by month across the whole period? Olist is widely described as a high-growth marketplace; the shape of this series is the first thing any dashboard should show. count(DISTINCT c.customer_unique_id), NOT customer_id: orders.customer_id is the primary key of olist.customers and is unique per order, so counting it here would report the same number of \"customers\" as orders in every month and make it look as though nobody ever bought twice.",
+      "sql": "-- How did order volume and revenue move month by month across the whole period?\n-- Olist is widely described as a high-growth marketplace; the shape of this\n-- series is the first thing any dashboard should show.\n-- count(DISTINCT c.customer_unique_id), NOT customer_id: orders.customer_id is\n-- the primary key of olist.customers and is unique per order, so counting it\n-- here would report the same number of \"customers\" as orders in every month and\n-- make it look as though nobody ever bought twice.\nSELECT\n    to_char(date_trunc('month', o.purchase_date), 'YYYY-MM') AS month,\n    count(*)                                              AS orders,\n    count(DISTINCT c.customer_unique_id)                  AS customers,\n    round(sum(a.payment_total), 2)                        AS revenue,\n    round(avg(a.payment_total), 2)                        AS avg_order_value,\n    round(sum(a.payment_count), 0)                        AS payment_rows\nFROM olist.orders o\nJOIN olist.order_payments_agg a USING (order_id)\nJOIN olist.customers c USING (customer_id)\nWHERE a.payment_total > 0\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "month",
+        "orders",
+        "customers",
+        "revenue",
+        "avg_order_value",
+        "payment_rows"
+      ],
+      "rows": [
+        [
+          "2016-09",
+          3,
+          3,
+          "252.24",
+          "84.08",
+          "3"
+        ],
+        [
+          "2016-10",
+          324,
+          321,
+          "59090.48",
+          "182.38",
+          "342"
+        ],
+        [
+          "2016-12",
+          1,
+          1,
+          "19.62",
+          "19.62",
+          "1"
+        ],
+        [
+          "2017-01",
+          800,
+          765,
+          "138488.04",
+          "173.11",
+          "850"
+        ],
+        [
+          "2017-02",
+          1780,
+          1755,
+          "291908.01",
+          "163.99",
+          "1886"
+        ],
+        [
+          "2017-03",
+          2682,
+          2642,
+          "449863.60",
+          "167.73",
+          "2837"
+        ],
+        [
+          "2017-04",
+          2404,
+          2372,
+          "417788.03",
+          "173.79",
+          "2571"
+        ],
+        [
+          "2017-05",
+          3700,
+          3625,
+          "592918.82",
+          "160.25",
+          "3944"
+        ],
+        [
+          "2017-06",
+          3245,
+          3180,
+          "511276.38",
+          "157.56",
+          "3436"
+        ],
+        [
+          "2017-07",
+          4026,
+          3947,
+          "592382.92",
+          "147.14",
+          "4317"
+        ],
+        [
+          "2017-08",
+          4331,
+          4246,
+          "674396.32",
+          "155.71",
+          "4550"
+        ],
+        [
+          "2017-09",
+          4285,
+          4212,
+          "727762.45",
+          "169.84",
+          "4516"
+        ],
+        [
+          "2017-10",
+          4631,
+          4561,
+          "779677.88",
+          "168.36",
+          "4860"
+        ],
+        [
+          "2017-11",
+          7544,
+          7430,
+          "1194882.80",
+          "158.39",
+          "7863"
+        ],
+        [
+          "2017-12",
+          5673,
+          5603,
+          "878401.48",
+          "154.84",
+          "5895"
+        ],
+        [
+          "2018-01",
+          7269,
+          7166,
+          "1115004.18",
+          "153.39",
+          "7563"
+        ],
+        [
+          "2018-02",
+          6728,
+          6569,
+          "992463.34",
+          "147.51",
+          "6952"
+        ],
+        [
+          "2018-03",
+          7211,
+          7115,
+          "1159652.12",
+          "160.82",
+          "7512"
+        ],
+        [
+          "2018-04",
+          6939,
+          6882,
+          "1160785.48",
+          "167.28",
+          "7209"
+        ],
+        [
+          "2018-05",
+          6873,
+          6814,
+          "1153982.15",
+          "167.90",
+          "7135"
+        ],
+        [
+          "2018-06",
+          6167,
+          6128,
+          "1023880.50",
+          "166.03",
+          "6419"
+        ],
+        [
+          "2018-07",
+          6292,
+          6230,
+          "1066540.75",
+          "169.51",
+          "6507"
+        ],
+        [
+          "2018-08",
+          6510,
+          6459,
+          "1022425.32",
+          "157.05",
+          "6696"
+        ],
+        [
+          "2018-09",
+          15,
+          13,
+          "4439.54",
+          "295.97",
+          "15"
+        ],
+        [
+          "2018-10",
+          4,
+          4,
+          "589.67",
+          "147.42",
+          "4"
+        ]
+      ],
+      "row_count": 25,
+      "truncated": false,
+      "elapsed_ms": 999.3
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "multi_payment_orders",
+      "question": "Some orders are settled by several payments. This is why order_payments_agg has fewer rows than payments, and why revenue must not be counted per row.",
+      "sql": "-- Some orders are settled by several payments. This is why order_payments_agg\n-- has fewer rows than payments, and why revenue must not be counted per row.\nSELECT\n    payment_count                                         AS payments_settling_order,\n    count(*)                                              AS orders,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)     AS pct_of_orders,\n    round(sum(payment_total), 2)                          AS revenue,\n    round(avg(payment_total), 2)                          AS avg_order_value\nFROM olist.order_payments_agg\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "payments_settling_order",
+        "orders",
+        "pct_of_orders",
+        "revenue",
+        "avg_order_value"
+      ],
+      "rows": [
+        [
+          1,
+          96479,
+          "97.02",
+          "15516764.17",
+          "160.83"
+        ],
+        [
+          2,
+          2382,
+          "2.40",
+          "413304.19",
+          "173.51"
+        ],
+        [
+          3,
+          301,
+          "0.30",
+          "38023.71",
+          "126.32"
+        ],
+        [
+          4,
+          108,
+          "0.11",
+          "11173.30",
+          "103.46"
+        ],
+        [
+          5,
+          52,
+          "0.05",
+          "6711.72",
+          "129.07"
+        ],
+        [
+          6,
+          36,
+          "0.04",
+          "6690.19",
+          "185.84"
+        ],
+        [
+          7,
+          28,
+          "0.03",
+          "6399.14",
+          "228.54"
+        ],
+        [
+          8,
+          11,
+          "0.01",
+          "1439.89",
+          "130.90"
+        ],
+        [
+          9,
+          9,
+          "0.01",
+          "1693.10",
+          "188.12"
+        ],
+        [
+          10,
+          5,
+          "0.01",
+          "537.52",
+          "107.50"
+        ],
+        [
+          11,
+          8,
+          "0.01",
+          "1301.12",
+          "162.64"
+        ],
+        [
+          12,
+          8,
+          "0.01",
+          "1968.48",
+          "246.06"
+        ],
+        [
+          13,
+          3,
+          "0.00",
+          "396.41",
+          "132.14"
+        ],
+        [
+          14,
+          2,
+          "0.00",
+          "630.12",
+          "315.06"
+        ],
+        [
+          15,
+          2,
+          "0.00",
+          "827.75",
+          "413.88"
+        ],
+        [
+          19,
+          2,
+          "0.00",
+          "288.47",
+          "144.24"
+        ],
+        [
+          21,
+          1,
+          "0.00",
+          "161.32",
+          "161.32"
+        ],
+        [
+          22,
+          1,
+          "0.00",
+          "40.85",
+          "40.85"
+        ],
+        [
+          26,
+          1,
+          "0.00",
+          "62.68",
+          "62.68"
+        ],
+        [
+          29,
+          1,
+          "0.00",
+          "457.99",
+          "457.99"
+        ]
+      ],
+      "row_count": 20,
+      "truncated": false,
+      "elapsed_ms": 27.6
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "order_status_funnel",
+      "question": "What actually happened to every order? Revenue is only real once an order reaches a terminal state, so this separates money that was collected from money that was attempted.",
+      "sql": "-- What actually happened to every order? Revenue is only real once an order\n-- reaches a terminal state, so this separates money that was collected from\n-- money that was attempted.\nSELECT\n    o.order_status,\n    count(*)                                              AS orders,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)     AS pct_of_orders,\n    round(sum(a.payment_total), 2)                        AS payment_attempted,\n    round(100.0 * sum(a.payment_total) / sum(sum(a.payment_total)) OVER (), 2)\n                                                          AS pct_of_payment_attempted\nFROM olist.orders o\nLEFT JOIN olist.order_payments_agg a USING (order_id)\nGROUP BY 1\nORDER BY payment_attempted DESC NULLS LAST;",
+      "columns": [
+        "order_status",
+        "orders",
+        "pct_of_orders",
+        "payment_attempted",
+        "pct_of_payment_attempted"
+      ],
+      "rows": [
+        [
+          "delivered",
+          96478,
+          "97.02",
+          "15422461.77",
+          "96.34"
+        ],
+        [
+          "shipped",
+          1107,
+          "1.11",
+          "177213.96",
+          "1.11"
+        ],
+        [
+          "canceled",
+          625,
+          "0.63",
+          "143255.60",
+          "0.89"
+        ],
+        [
+          "unavailable",
+          609,
+          "0.61",
+          "126479.51",
+          "0.79"
+        ],
+        [
+          "processing",
+          301,
+          "0.30",
+          "69394.11",
+          "0.43"
+        ],
+        [
+          "invoiced",
+          314,
+          "0.32",
+          "69137.99",
+          "0.43"
+        ],
+        [
+          "created",
+          5,
+          "0.01",
+          "688.10",
+          "0.00"
+        ],
+        [
+          "approved",
+          2,
+          "0.00",
+          "241.08",
+          "0.00"
+        ]
+      ],
+      "row_count": 8,
+      "truncated": false,
+      "elapsed_ms": 140.0
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "payment_behaviour",
+      "question": "How do customers actually pay? Installments are the interesting column: a single R$100 payment in 1 instalment and in 10 are different products.",
+      "sql": "-- How do customers actually pay? Installments are the interesting column: a\n-- single R$100 payment in 1 instalment and in 10 are different products.\nSELECT\n    p.payment_type,\n    count(*)                                              AS payment_rows,\n    round(sum(p.payment_value), 2)                        AS value,\n    round(100.0 * sum(p.payment_value) / sum(sum(p.payment_value)) OVER (), 2)\n                                                          AS pct_of_all_value,\n    round(avg(p.payment_installments), 2)                 AS avg_installments,\n    max(p.payment_installments)                           AS max_installments,\n    count(*) FILTER (WHERE p.payment_installments > 1)    AS rows_on_installments,\n    round(100.0 * count(*) FILTER (WHERE p.payment_installments > 1)\n          / count(*), 2)                                  AS pct_rows_on_installments,\n    round(sum(p.payment_value) FILTER (WHERE p.payment_installments > 1), 2)\n                                                          AS value_on_installments,\n    round(100.0 * sum(p.payment_value) FILTER (WHERE p.payment_installments > 1)\n          / sum(p.payment_value), 2)                      AS pct_of_type_value_on_installments\nFROM olist.payments p\nGROUP BY 1\nORDER BY value DESC;",
+      "columns": [
+        "payment_type",
+        "payment_rows",
+        "value",
+        "pct_of_all_value",
+        "avg_installments",
+        "max_installments",
+        "rows_on_installments",
+        "pct_rows_on_installments",
+        "value_on_installments",
+        "pct_of_type_value_on_installments"
+      ],
+      "rows": [
+        [
+          "credit_card",
+          76795,
+          "12542084.19",
+          "78.34",
+          "3.51",
+          24,
+          51338,
+          "66.85",
+          "10101450.13",
+          "80.54"
+        ],
+        [
+          "boleto",
+          19784,
+          "2869361.27",
+          "17.92",
+          "1.00",
+          1,
+          0,
+          "0.00",
+          null,
+          null
+        ],
+        [
+          "voucher",
+          5775,
+          "379436.87",
+          "2.37",
+          "1.00",
+          1,
+          0,
+          "0.00",
+          null,
+          null
+        ],
+        [
+          "debit_card",
+          1529,
+          "217989.79",
+          "1.36",
+          "1.00",
+          1,
+          0,
+          "0.00",
+          null,
+          null
+        ],
+        [
+          "not_defined",
+          3,
+          "0.00",
+          "0.00",
+          "1.00",
+          1,
+          0,
+          "0.00",
+          null,
+          null
+        ]
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "elapsed_ms": 734.3
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "review_coverage_and_score",
+      "question": "Only customers who were happy enough to write can be measured at all, so this reports review COVERAGE before it reports score. A 4.5 average over 6% of orders is a very different claim from a 4.5 average over 90%. DISTINCT is required, not decorative: olist.reviews holds more review rows than there are reviewed orders, so a plain count(*) over this join counts a multi-review order several times and inflates the coverage rate.",
+      "sql": "-- Only customers who were happy enough to write can be measured at all, so this\n-- reports review COVERAGE before it reports score. A 4.5 average over 6% of\n-- orders is a very different claim from a 4.5 average over 90%.\n-- DISTINCT is required, not decorative: olist.reviews holds more review rows\n-- than there are reviewed orders, so a plain count(*) over this join counts a\n-- multi-review order several times and inflates the coverage rate.\nSELECT\n    count(DISTINCT o.order_id)                            AS orders_total,\n    count(DISTINCT o.order_id) FILTER (WHERE r.order_id IS NOT NULL)\n                                                          AS orders_with_review,\n    count(DISTINCT o.order_id) FILTER (WHERE r.order_id IS NULL)\n                                                          AS orders_without_review,\n    round(100.0 * count(DISTINCT o.order_id) FILTER (WHERE r.order_id IS NOT NULL)\n          / count(DISTINCT o.order_id), 2)                AS pct_reviewed,\n    round(avg(r.review_score), 2)                         AS avg_score_across_reviews,\n    min(r.review_score)                                   AS min_score,\n    max(r.review_score)                                   AS max_score,\n    count(DISTINCT r.review_id)                           AS distinct_review_ids,\n    count(*) FILTER (WHERE r.review_id IS NOT NULL)       AS review_rows\nFROM olist.orders o\nLEFT JOIN olist.reviews r USING (order_id);",
+      "columns": [
+        "orders_total",
+        "orders_with_review",
+        "orders_without_review",
+        "pct_reviewed",
+        "avg_score_across_reviews",
+        "min_score",
+        "max_score",
+        "distinct_review_ids",
+        "review_rows"
+      ],
+      "rows": [
+        [
+          99441,
+          98673,
+          768,
+          "99.23",
+          "4.09",
+          1,
+          5,
+          98410,
+          99224
+        ]
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "elapsed_ms": 738.9
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "review_grain_candidates",
+      "question": "Which key actually holds? Tests the three plausible grains rather than asserting one. rows - distinct pairs is the surplus; zero means the key is a valid primary key.",
+      "sql": "-- Which key actually holds? Tests the three plausible grains rather than\n-- asserting one. rows - distinct pairs is the surplus; zero means the key is a\n-- valid primary key.\nSELECT 'review_id alone'   AS candidate_key, '1 row per review'        AS claimed_grain,\n       count(*) - count(DISTINCT review_id) AS surplus_rows,\n       count(*) FILTER (WHERE review_id IS NULL) AS null_rows\nFROM olist.reviews\nUNION ALL\nSELECT 'review_id + order_id', '1 row per review-per-order link',\n       count(*) - count(DISTINCT (review_id, order_id)),\n       count(*) FILTER (WHERE review_id IS NULL OR order_id IS NULL)\nFROM olist.reviews\nUNION ALL\nSELECT 'order_id + review_creation_date', '1 row per order, repeated reviews impossible',\n       count(*) - count(DISTINCT (order_id, review_creation_date)),\n       count(*) FILTER (WHERE order_id IS NULL OR review_creation_date IS NULL)\nFROM olist.reviews\nORDER BY surplus_rows;",
+      "columns": [
+        "candidate_key",
+        "claimed_grain",
+        "surplus_rows",
+        "null_rows"
+      ],
+      "rows": [
+        [
+          "review_id + order_id",
+          "1 row per review-per-order link",
+          0,
+          0
+        ],
+        [
+          "order_id + review_creation_date",
+          "1 row per order, repeated reviews impossible",
+          157,
+          0
+        ],
+        [
+          "review_id alone",
+          "1 row per review",
+          814,
+          0
+        ]
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "elapsed_ms": 1001.0
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "review_id_forensics",
+      "question": "WHY review_id IS NOT A PRIMARY KEY HERE",
+      "sql": "-- WHY review_id IS NOT A PRIMARY KEY HERE\n--\n-- review_id repeats: 99,224 rows carry only 98,410 distinct values. The obvious\n-- reading is that a customer re-submitted the same review, but the evidence says\n-- something else entirely. This query lays out the test, one row per duplicated\n-- review_id.\n--\n-- The discriminator is the timestamp. A genuine re-submission is a second event\n-- and would carry its own creation and answer times. If every duplicated row\n-- shares both timestamps exactly, there was only ever ONE review, and the\n-- dataset is repeating it across several of that customer's orders.\n--\n-- The second column, orders_placed_after_the_review, is the clincher. A customer\n-- cannot review an order they had not yet placed, so any row where it happens\n-- proves the association was manufactured rather than reported.\nWITH duplicated AS (\n    SELECT review_id, count(*) AS rows_in_group\n    FROM olist.reviews\n    GROUP BY 1\n    HAVING count(*) > 1\n),\nper_review AS (\n    SELECT\n        r.review_id,\n        max(d.rows_in_group)                                    AS rows_in_group,\n        count(DISTINCT r.order_id)                               AS distinct_orders,\n        count(DISTINCT c.customer_unique_id)                     AS distinct_people,\n        count(DISTINCT r.review_score)                           AS distinct_scores,\n        -- coalesce matters: most reviews carry no title at all, and\n        -- count(DISTINCT review_comment_title) ignores NULLs, so it would\n        -- report 0 distinct titles for a group and make \"all the same\" look\n        -- false when it is merely absent.\n        count(DISTINCT coalesce(r.review_comment_title, '<none>'))   AS distinct_titles,\n        count(DISTINCT coalesce(r.review_comment_message, '<none>')) AS distinct_messages,\n        count(DISTINCT r.review_creation_date)                   AS distinct_creation_dates,\n        count(DISTINCT r.review_answer_timestamp)                AS distinct_answer_dates,\n        count(*) FILTER (WHERE o.purchase_date > r.review_creation_date)\n                                                               AS orders_placed_after_the_review,\n        count(DISTINCT o.customer_id)                            AS customer_rows_behind_the_orders\n    FROM olist.reviews r\n    JOIN duplicated d ON d.review_id = r.review_id\n    JOIN olist.orders o    ON o.order_id = r.order_id\n    JOIN olist.customers c ON c.customer_id = o.customer_id\n    GROUP BY 1\n)\nSELECT\n    rows_in_group,\n    count(*)                                                     AS review_ids,\n    count(*) FILTER (WHERE distinct_people = 1)                  AS all_one_person,\n    count(*) FILTER (WHERE distinct_scores = 1)                  AS all_same_score,\n    count(*) FILTER (WHERE distinct_titles = 1 AND distinct_messages = 1)\n                                                                 AS all_same_text,\n    count(*) FILTER (WHERE distinct_creation_dates = 1 AND distinct_answer_dates = 1)\n                                                                 AS all_same_both_timestamps,\n    count(*) FILTER (WHERE orders_placed_after_the_review > 0)   AS impossible_chronology,\n    sum(distinct_orders)                                         AS order_links,\n    sum(orders_placed_after_the_review)                          AS impossible_order_links\nFROM per_review\n-- GROUPING SETS adds an \"all\" row so the totals are measured rather than\n-- summed by hand in the write-up.\nGROUP BY GROUPING SETS ((rows_in_group), ())\nORDER BY rows_in_group NULLS LAST;",
+      "columns": [
+        "rows_in_group",
+        "review_ids",
+        "all_one_person",
+        "all_same_score",
+        "all_same_text",
+        "all_same_both_timestamps",
+        "impossible_chronology",
+        "order_links",
+        "impossible_order_links"
+      ],
+      "rows": [
+        [
+          2,
+          764,
+          764,
+          764,
+          764,
+          764,
+          26,
+          "1528",
+          "28"
+        ],
+        [
+          3,
+          25,
+          25,
+          25,
+          25,
+          25,
+          6,
+          "75",
+          "12"
+        ],
+        [
+          null,
+          789,
+          789,
+          789,
+          789,
+          789,
+          32,
+          "1603",
+          "40"
+        ]
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "elapsed_ms": 1139.2
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "review_score_distribution",
+      "question": "Score distribution alongside the comment volume behind each score. A 1-star with no comment is a different event from a 1-star with a paragraph.",
+      "sql": "-- Score distribution alongside the comment volume behind each score. A 1-star\n-- with no comment is a different event from a 1-star with a paragraph.\nSELECT\n    r.review_score,\n    count(*)                                              AS reviews,\n    round(100.0 * count(*) / sum(count(*)) OVER (), 2)     AS pct_of_reviews,\n    round(100.0 * count(*) FILTER (WHERE r.review_comment_message IS NOT NULL)\n          / count(*), 2)                                  AS pct_with_comment,\n    round(avg(length(r.review_comment_message)), 0)       AS avg_comment_chars\nFROM olist.reviews r\nGROUP BY 1\nORDER BY 1;",
+      "columns": [
+        "review_score",
+        "reviews",
+        "pct_of_reviews",
+        "pct_with_comment",
+        "avg_comment_chars"
+      ],
+      "rows": [
+        [
+          1,
+          11424,
+          "11.51",
+          "76.55",
+          "100"
+        ],
+        [
+          2,
+          3151,
+          "3.18",
+          "68.07",
+          "97"
+        ],
+        [
+          3,
+          8179,
+          "8.24",
+          "43.49",
+          "83"
+        ],
+        [
+          4,
+          19142,
+          "19.29",
+          "31.22",
+          "62"
+        ],
+        [
+          5,
+          57328,
+          "57.78",
+          "35.85",
+          "52"
+        ]
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "elapsed_ms": 38.8
+    },
+    {
+      "source": "olist",
+      "file": "backend/sql/olist/01_order_lifecycle.sql",
+      "name": "seller_concentration",
+      "question": "How dependent is the marketplace on its biggest sellers? This measures gross merchandise value as the SUM OF order_items.item_total, NOT the order's payment_total: an order with six items has six rows, so joining items to payments and summing the order total would count that order's revenue six times. Each item belongs to exactly one seller, so item-level GMV cannot double-count. WITH seller_gmv AS (",
+      "sql": "-- How dependent is the marketplace on its biggest sellers? This measures gross\n-- merchandise value as the SUM OF order_items.item_total, NOT the order's\n-- payment_total: an order with six items has six rows, so joining items to\n-- payments and summing the order total would count that order's revenue six\n-- times. Each item belongs to exactly one seller, so item-level GMV cannot\n-- double-count.\nWITH seller_gmv AS (\n    SELECT\n        i.seller_id,\n        count(DISTINCT i.order_id) AS orders,\n        sum(i.item_total)          AS gmv\n    FROM olist.order_items i\n    GROUP BY 1\n),\nranked AS (\n    SELECT\n        row_number() OVER (ORDER BY gmv DESC) AS seller_rank,\n        orders,\n        gmv\n    FROM seller_gmv\n),\nthresholds(n) AS (VALUES (1), (10), (50), (100), (500), (1000), (3095))\nSELECT\n    t.n                                                   AS top_n_sellers,\n    round(100.0 * t.n / (SELECT count(*) FROM seller_gmv), 2) AS pct_of_sellers,\n    count(*)                                              AS sellers_cumulative,\n    -- An order with items from three sellers is counted once per seller, so this\n    -- is (seller, order) pairs, not distinct orders.\n    sum(r.orders)                                         AS seller_order_pairs,\n    round(sum(r.gmv), 2)                                  AS gmv_cumulative,\n    round(100.0 * sum(r.gmv) / (SELECT sum(gmv) FROM seller_gmv), 2)\n                                                          AS pct_of_gmv\nFROM thresholds t\nJOIN ranked r ON r.seller_rank <= t.n\nGROUP BY 1, 2\nORDER BY 1;",
+      "columns": [
+        "top_n_sellers",
+        "pct_of_sellers",
+        "sellers_cumulative",
+        "seller_order_pairs",
+        "gmv_cumulative",
+        "pct_of_gmv"
+      ],
+      "rows": [
+        [
+          1,
+          "0.03",
+          1,
+          "1132",
+          "249640.70",
+          "1.58"
+        ],
+        [
+          10,
+          "0.32",
+          10,
+          "9875",
+          "2028716.63",
+          "12.80"
+        ],
+        [
+          50,
+          "1.62",
+          50,
+          "29021",
+          "5108502.07",
+          "32.24"
+        ],
+        [
+          100,
+          "3.23",
+          100,
+          "40648",
+          "7030376.15",
+          "44.37"
+        ],
+        [
+          500,
+          "16.16",
+          500,
+          "73047",
+          "12267116.70",
+          "77.43"
+        ],
+        [
+          1000,
+          "32.31",
+          1000,
+          "88302",
+          "14427117.55",
+          "91.06"
+        ],
+        [
+          3095,
+          "100.00",
+          3095,
+          "100010",
+          "15843553.24",
+          "100.00"
+        ]
+      ],
+      "row_count": 7,
+      "truncated": false,
+      "elapsed_ms": 901.9
+    }
+  ]
+}

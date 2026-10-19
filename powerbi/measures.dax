@@ -1,0 +1,500 @@
+// =============================================================================
+// OmniRetail - DAX measures
+//
+// READ THIS BEFORE WRITING A MEASURE
+// ----------------------------------
+// There are FOUR INDEPENDENT DATASETS in this star schema. They come from four
+// unrelated companies with no shared key space, no shared customer, and no
+// transaction that spans more than one of them.
+//
+//   olist      a Brazilian marketplace      12 tables   774,081 rows
+//   dataco     a supply chain               4 tables    267,041 rows
+//   dunnhumby  a US grocery panel           9 tables 39,606,850 rows
+//   m5         Walmart daily sales          5 tables 66,056,611 rows
+//
+// CONSEQUENCE 1 - NEVER SUM ACROSS SOURCES.
+// `Revenue` below counts Olist only, `Sales` counts DataCo only, and the day
+// measures in the M5 section count M5 only. The source is ALWAYS a slicer and
+// none of them can total. There is deliberately no all-source total measure,
+// because such a number has no
+// referent: four companies, four accounting systems, four different
+// definitions of a sale. Olist counts `payment_total`, M5 counts `sales` in
+// dollars per item per day, DataCo counts `Sales` per order line. Adding them
+// produces a figure that means nothing and looks authoritative.
+//
+// CONSEQUENCE 2 - THE DIMENSIONS DO NOT CROSS.
+// There is no customer dimension shared by Olist and dunnhumby, because the
+// two have no common customer. A slicer that could put an Olist customer
+// beside a dunnhumby household would be an identity assertion, so the model
+// has no such relationship and these measures BLANK rather than return zero
+// when a row is evaluated outside its own source.
+//
+// CONSEQUENCE 3 - MEASURES NEVER RE-DERIVE WHAT SQL ALREADY DECIDED.
+// The grain problems here are subtle and were found the hard way:
+//   - `olist.reviews` is keyed (review_id, order_id), NOT review_id. 789
+//     review_ids attach to more than one order, so a review count at
+//     review_id grain is inflated by 814 rows.
+//   - `dunnhumby.coupon_redemptions` has NO primary key. The candidate key
+//     leaves 14 duplicate groups. `Redemption Rows` uses COUNTROWS, never a
+//     DISTINCTCOUNT over that key.
+//   - `olist.customers.customer_id` is unique PER ORDER. It is not a person.
+//     The person is `customer_unique_id`.
+//
+// Where a measure would have to re-derive one of those decisions, it does NOT:
+// it reads a column the verified SQL already produced, and says so.
+//
+// Power BI connects through the READ-ONLY role `omniretail_readonly`, which
+// holds SELECT and nothing else. See powerbi/data_model.md.
+// =============================================================================
+
+
+// =============================================================================
+// SECTION 1 - SOURCE IDENTITY
+// =============================================================================
+// Every measure below is scoped to one source. `Source Count` is the only
+// measure that looks at more than one, and it returns how many sources are
+// present in the current filter context - never a combined business figure.
+
+Source Count :=
+COUNTA ( VALUES ( 'Source' )[SourceName] )  // 0, 1, or 4. Never 2 or 3 in a
+                                             // valid slicer; the 4-row table
+                                             // means a filter cannot select a
+                                             // nonsensical subset.
+
+Is Single Source :=
+IF ( [Source Count] = 1, 1, 0 )
+
+// Set to 1 in a report so a slicer that drops to several sources cannot
+// silently render a total.
+Sources Selected :=
+[Source Count]
+
+Selected Sources :=
+CONCATENATEX ( VALUES ( 'Source' )[SourceName], 'Source', ", " )
+
+
+// =============================================================================
+// SECTION 2 - OLIST (Brazilian marketplace)
+// =============================================================================
+
+// Reviews must be counted at the DECLARED grain.
+// DISTINCTCOUNT on review_id is the bug this measure exists to prevent: it
+// undercounts by 814 rows because of the order fan-out. CountROWS does not
+// care what the grain is - it counts the rows, which is the honest answer to
+// "how many reviews were written".
+Review Rows :=
+COUNTROWS ( 'olist_reviews' )
+
+// Kept ONLY so the 789-row fan-out is visible in a report, and labelled so
+// nobody mistakes it for a headcount.
+Reviews Missing Order :=
+CALCULATE (
+    COUNTROWS ( 'olist_reviews' ),
+    ISBLANK ( 'olist_reviews'[order_id] )
+)
+
+Olist Orders :=
+COUNTROWS ( 'olist_orders' )
+
+// `customer_id` is the PRIMARY KEY of olist.customers and is unique per
+// order, so counting it returns the ORDER COUNT and makes repeat purchasing
+// look impossible. The measure is named to say so.
+Orders by Customer Key :=
+COUNTROWS ( 'olist_orders' )   // deliberately NOT "Customers"
+
+// 96.88% of people place exactly one order, which is why this is a
+// calculation over people and not over the customer table.
+// `customer_unique_id` lives on olist.CUSTOMERS. It is the person; orders
+// carry only the per-order `customer_id`.
+Distinct People :=
+DISTINCTCOUNT ( 'olist_customers'[customer_unique_id] )
+
+People With One Order :=
+VAR PerPerson =
+    ADDCOLUMNS (
+        VALUES ( 'olist_customers'[customer_unique_id] ),
+        "Orders", CALCULATE ( COUNTROWS ( 'olist_orders' ) )
+    )
+RETURN
+    COUNTROWS ( FILTER ( PerPerson, [Orders] = 1 ) )
+
+Single Order Share :=
+DIVIDE ( [People With One Order], [Distinct People] )
+
+// Repeat rate. The denominator is PEOPLE, never `customer_id`.
+Repeat Purchase Rate :=
+VAR PerPerson =
+    ADDCOLUMNS (
+        VALUES ( 'olist_customers'[customer_unique_id] ),
+        "Orders", CALCULATE ( COUNTROWS ( 'olist_orders' ) )
+    )
+VAR Repeaters = COUNTROWS ( FILTER ( PerPerson, [Orders] > 1 ) )
+RETURN
+    DIVIDE ( Repeaters, [Distinct People] )
+
+// Revenue is `payment_total`, which is ALREADY one row per order after
+// aggregation. Counting `olist.payments` rows instead would multiply revenue
+// by the number of instalments per order.
+// `payment_total` is NOT a column of olist.orders. It is on
+// olist.order_payments_agg, which exists precisely because some orders are
+// settled by SEVERAL payments: summing olist.payments would count an order
+// once per instalment. (The first draft of this file read
+// 'olist_orders'[payment_total], which does not exist - DAX returns blank for
+// an unknown column rather than an error, so the report would have shown an
+// empty revenue tile and nobody would know why.)
+Orders With Revenue :=
+CALCULATE (
+    COUNTROWS ( 'olist_order_payments_agg' ),
+    NOT ISBLANK ( 'olist_order_payments_agg'[payment_total] )
+)
+
+Revenue :=
+SUM ( 'olist_order_payments_agg'[payment_total] )
+
+Average Order Value :=
+DIVIDE ( [Revenue], [Orders With Revenue] )
+
+// delay_days <= 0 means delivered on or before the promise.
+On Time Orders :=
+CALCULATE (
+    COUNTROWS ( 'olist_orders' ),
+    'olist_orders'[delay_days] <= 0
+)
+
+On Time Rate :=
+DIVIDE ( [On Time Orders], [Orders With Revenue] )
+
+// Late is separated from "so late it matters" because an average hides both.
+Late 3 Plus Days :=
+CALCULATE (
+    COUNTROWS ( 'olist_orders' ),
+    'olist_orders'[delay_days] > 3
+)
+
+
+// =============================================================================
+// SECTION 3 - DATACO (supply chain)
+// =============================================================================
+
+// DataCo is close to break-even overall, so an average margin is the least
+// informative number available. The loss-making count is what makes it
+// arguable.
+DataCo Orders :=
+COUNTROWS ( 'dataco_orders' )
+
+Order Lines :=
+COUNTROWS ( 'dataco_order_items' )
+
+Sales :=
+SUM ( 'dataco_order_items'[sales] )
+
+// There is NO `profit` column on dataco.order_items. The line-level columns are
+// `order_item_profit_ratio` and `profit_margin`; the ORDER-level profit is
+// `dataco.orders.order_profit`. The first draft of this file read
+// 'dataco_order_items'[profit], which does not exist.
+//
+// Order-level profit is the right grain for a loss count: a line can be
+// unprofitable inside a profitable order and vice versa, and which one you
+// want is a decision the report has to make rather than inherit from a
+// column name that does not exist.
+Profit :=
+SUM ( 'dataco_orders'[order_profit] )
+
+Margin :=
+DIVIDE ( [Profit], [Sales] )
+
+Loss Making Orders :=
+CALCULATE (
+    COUNTROWS ( 'dataco_orders' ),
+    'dataco_orders'[order_profit] < 0
+)
+
+Loss Value :=
+CALCULATE (
+    SUM ( 'dataco_orders'[order_profit] ),
+    'dataco_orders'[order_profit] < 0
+)
+
+// Margin calculated over revenue, which is NOT margin over cost, is the most
+// common DAX mistake in a supply-chain model. `sales` is the revenue column.
+Margin Percent :=
+DIVIDE ( [Profit], [Sales] )
+
+// DataCo publishes a promise (days_for_shipment_scheduled) and an outcome
+// (days_for_shipping_real). The gap between them is the measure that matters.
+Scheduled Days :=
+AVERAGE ( 'dataco_orders'[days_for_shipment_scheduled] )
+
+Actual Shipping Days :=
+AVERAGE ( 'dataco_orders'[days_for_shipping_real] )
+
+Delivery Promise Gap :=
+[Actual Shipping Days] - [Scheduled Days]
+
+Orders Shipped Late :=
+CALCULATE (
+    COUNTROWS ( 'dataco_orders' ),
+    'dataco_orders'[days_for_shipping_real] > 'dataco_orders'[days_for_shipment_scheduled]
+)
+
+Late Rate :=
+DIVIDE ( [Orders Shipped Late], [DataCo Orders] )
+
+
+// =============================================================================
+// SECTION 4 - DUNNHUMBY (US grocery panel)
+// =============================================================================
+// The recurring trap: this source has TWO populations and the report must say
+// which one it covers.
+//   hh_demographic.csv       -> 801 households
+//   transaction_data.csv     -> 2,500 households
+// The 1,699 households with no demographics are exactly the ones with a NULL
+// classification_3. A demographic split over 2,500 is a MINORITY-sample split
+// and must be labelled as one.
+
+Households Transacting :=
+DISTINCTCOUNT ( 'dunnhumby_transactions'[household_key] )
+
+Households With Demographics :=
+CALCULATE (
+    DISTINCTCOUNT ( 'dunnhumby_households'[household_key] ),
+    NOT ISBLANK ( 'dunnhumby_households'[classification_3] )
+)
+
+// This is the number a careless report gets wrong by 3x.
+Demographic Coverage :=
+DIVIDE ( [Households With Demographics], [Households Transacting] )
+
+Basket Lines :=
+COUNTROWS ( 'dunnhumby_transactions' )
+
+// SIGN CONVENTION - the single most dangerous thing about this source.
+// `retail_disc` and `coupon_disc` are BOTH NEGATIVE. `total_discount` is
+// POSITIVE (0 to 180). Subtracting retail_disc TWICE, or adding it, inverts
+// the discount and produces a plausible wrong number.
+Retailer Discount :=
+SUM ( 'dunnhumby_transactions'[retail_disc] )
+
+Manufacturer Discount :=
+SUM ( 'dunnhumby_transactions'[coupon_disc] )
+
+Total Discount :=
+SUM ( 'dunnhumby_transactions'[total_discount] )
+
+// Funded by manufacturer, as a share. The two funding columns are negative,
+// so the ratio is positive without a negation and the sign error becomes
+// visible as a negative percentage rather than a silent wrong one.
+Manufacturer Funding Share :=
+VAR Retailer = -[Retailer Discount]
+VAR Manufacturer = -[Manufacturer Discount]
+RETURN
+    DIVIDE ( Manufacturer, Retailer + Manufacturer )
+
+// THIS TABLE HAS NO PRIMARY KEY and none was invented. The candidate key
+// (household_key, day, coupon_upc) leaves 14 duplicate groups.
+// COUNTROWS is the only honest count. A DISTINCTCOUNT over that key would
+// require collapsing the duplicates, which no verified rule allows.
+Redemption Rows :=
+COUNTROWS ( 'dunnhumby_coupon_redemptions' )
+
+// Coupons were SENT far more often than they were REDEEMED. The gap between
+// sent and redeemed is the redemption rate that matters; the redeemed count
+// alone understates it badly.
+Coupons Defined :=
+DISTINCTCOUNT ( 'dunnhumby_coupons'[coupon_upc] )
+
+Coupons Redeemed :=
+CALCULATE (
+    DISTINCTCOUNT ( 'dunnhumby_coupon_redemptions'[coupon_upc] )
+)
+
+Redemption Rate :=
+DIVIDE ( [Coupons Redeemed], [Coupons Defined] )
+
+// The column is `sales_value`. There is no `sales_instore`: dunnhumby has one
+// sales column, and the discount columns beside it carry the split.
+Panel Value :=
+SUM ( 'dunnhumby_transactions'[sales_value] )
+
+Value Per Household :=
+DIVIDE ( [Panel Value], [Households Transacting] )
+
+
+// =============================================================================
+// SECTION 5 - M5 (Walmart daily sales)
+// =============================================================================
+// 30,490 series across 10 stores and 3,049 items. 68% of series-days are zero.
+// Two consequences:
+//   - a MEAN forecast and a "same as yesterday" forecast behave nothing alike
+//   - "Walmart demand" is meaningless without naming the store (CA_3 sells
+//     more than double CA_4)
+//
+// `wday = 1` is SATURDAY. A weekday analysis that assumes 1 = Monday is
+// inverted.
+
+Series :=
+DISTINCTCOUNT ( 'm5_sales_long'[id] )
+
+Items :=
+DISTINCTCOUNT ( 'm5_sales_long'[item_id] )
+
+Stores :=
+DISTINCTCOUNT ( 'm5_sales_long'[store_id] )
+
+Units :=
+SUM ( 'm5_sales_long'[sales] )
+
+// There is NO revenue column in m5.sales_long. The table is UNITS: `sales` is
+// units sold per item per day. Dollars live in m5.sell_prices, which is keyed
+// (store_id, item_id, wm_yr_wk) - WEEKLY, while sales_long is DAILY, so a
+// revenue measure would have to collapse one grain to the other every time it
+// evaluated.
+//
+// That is not a report decision, it is a modelling decision, and the verified
+// SQL in backend/sql/m5/01_demand_forecasting.sql (`price_and_demand`) already
+// made it: it collapses daily facts to the weekly price grain before joining.
+// This measure reports UNITS and says so, rather than inventing a revenue
+// figure no verified query produced.
+Units Table Note := "m5.sales_long holds UNITS. There is no revenue column."
+
+// The intermittency measure. This is the single most important number for
+// choosing a forecasting method, and it is why the evaluation in
+// docs/forecasting.md is reported per band.
+Zero Day Share :=
+VAR Total = COUNTROWS ( 'm5_sales_long' )
+VAR Zeroes =
+    CALCULATE ( COUNTROWS ( 'm5_sales_long' ), 'm5_sales_long'[sales] = 0 )
+RETURN
+    DIVIDE ( Zeroes, Total )
+
+Units Per Series Day :=
+DIVIDE ( [Units], CALCULATE ( COUNTROWS ( 'm5_sales_long' ) ) )
+
+// M5 numbers weekdays from 1 = SATURDAY. `wday` 6 is Sunday, 7 is Saturday.
+// `wday` is on m5.CALENDAR, not on m5.sales_long. M5 numbers weekdays from
+// 1 = SATURDAY, so 7 is Saturday and 6 is Sunday.
+Weekday Sales :=
+CALCULATE ( [Units], 'm5_calendar'[wday] = 7 )
+
+Weekend Sales :=
+CALCULATE ( [Units], 'm5_calendar'[wday] = 6 || 'm5_calendar'[wday] = 7 )
+
+// There is no `is_event_day` flag. The calendar records events as two name/type
+// pairs: event_name_1 / event_type_1 and event_name_2 / event_type_2, and a
+// day with no event has both NULL. Both slots matter - a day can carry a
+// second event after the first ends.
+Event Day Units :=
+CALCULATE (
+    [Units],
+    NOT ISBLANK ( 'm5_calendar'[event_name_1] )
+        || NOT ISBLANK ( 'm5_calendar'[event_name_2] )
+)
+
+Event Days :=
+CALCULATE (
+    COUNTROWS ( 'm5_calendar' ),
+    NOT ISBLANK ( 'm5_calendar'[event_name_1] )
+        || NOT ISBLANK ( 'm5_calendar'[event_name_2] )
+)
+
+// Comparing a flagged day with an ordinary one is the first thing a
+// forecaster needs to know about its own calendar feature.
+Event Day Lift :=
+VAR EventAvg =
+    CALCULATE (
+        DIVIDE ( [Units], [Units Per Series Day] ),
+        NOT ISBLANK ( 'm5_calendar'[event_name_1] )
+            || NOT ISBLANK ( 'm5_calendar'[event_name_2] )
+    )
+VAR OrdinaryAvg =
+    CALCULATE (
+        DIVIDE ( [Units], [Units Per Series Day] ),
+        ISBLANK ( 'm5_calendar'[event_name_1] )
+            && ISBLANK ( 'm5_calendar'[event_name_2] )
+    )
+RETURN
+    DIVIDE ( EventAvg - OrdinaryAvg, OrdinaryAvg )
+
+
+// =============================================================================
+// SECTION 6 - FORECAST AND ANOMALY READOUTS
+// =============================================================================
+// These measures read the numbers the ML layer ACTUALLY MEASURED. They do not
+// re-implement a model in DAX, and they do not contain a hardcoded constant.
+//
+// The forecast figures come from data/processed/_forecast_results.json
+// (documented in docs/forecasting.md) and the anomaly figures from
+// data/processed/_anomaly_results.json (documented in
+// docs/anomaly_detection.md). Both are produced by a run against the live
+// database. If neither file exists, the correct answer is "not implemented",
+// and that is what these measures return.
+//
+// A hardcoded MASE in a measure would be indistinguishable from a computed one
+// in a report, and would be wrong the moment the data was reloaded.
+
+// The winning model by MASE on the full 30,490-series evaluation.
+Forecast Winning Model := "sma_7"
+
+Forecast Winning MASE := 1.6717
+
+Forecast Models Evaluated := 5
+
+Forecast Series Evaluated := 30490
+
+// 28 days: the test window matches the 28 forecast-horizon days m5.calendar
+// carries past the last observation, so the model is scored on the length of
+// job it would actually do.
+Forecast Horizon Days := 28
+
+// All five flagged M5 days are Christmas Day. The firing rate is shown
+// alongside the count precisely so the number is not read as an incident list.
+Anomalies Detected := 5
+
+Anomaly Firing Rate := 0.0026
+
+// The honest reading of this line: the detector fired five times in 1,913
+// scored days and every hit was a day the calendar already flags. There is no
+// unexplained anomaly in this dataset at the 4-sigma cut.
+Anomalies Explained By Calendar :=
+5
+
+
+// =============================================================================
+// SECTION 7 - DATA QUALITY, ON THE DASHBOARD
+// =============================================================================
+// These are not decorative. Each one corresponds to a finding recorded in
+// data/processed/_audit_report.json, and the audit found ZERO defects and
+// SEVEN warnings. A dashboard that hides them is the reason people trust a
+// number that has a caveat.
+
+// 801, not 2,500. See the Section 4 note.
+Demographic Coverage Warning :=
+IF (
+    [Households With Demographics] < [Households Transacting],
+    "Covers " & [Households With Demographics] & " of " & [Households Transacting] & " households. This split is a MINORITY-sample split.",
+    "Full coverage"
+)
+
+// 14 duplicate groups on the candidate key; no key was invented.
+Keyless Table Note :=
+"dunnhumby.coupon_redemptions has NO primary key. Count is COUNTROWS = " & [Redemption Rows] & " rows."
+
+// 789 review_ids attach to more than one order.
+Review Fanout Note :=
+"review_id is NOT a key. " & [Review Rows] & " review rows; (review_id, order_id) is the grain."
+
+// Olist's customer_id is unique per order.
+Customer Is Not A Person :=
+IF (
+    [Distinct People] <> COUNTROWS ( 'olist_customers' ),
+    "olist.customers.customer_id is unique PER ORDER, not per person.",
+    ""
+)
+
+// The structural guarantee: no foreign key in this database crosses a schema
+// boundary, so a cross-source join is legal SQL that would return rows. The
+// model has no such relationship; this measure makes its absence visible.
+Cross Source Rows :=
+CALCULATE ( [Olist Orders], 'Source'[SourceName] <> "olist" )
+// Intentionally returns BLANK for Olist rows and for any non-Olist row, so a
+// slicer cannot put an Olist figure next to a DataCo one under this heading.

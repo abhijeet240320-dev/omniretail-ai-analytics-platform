@@ -1,0 +1,49 @@
+# ============================================================
+# OmniRetail AI Analytics Platform — Python dependencies
+#
+# Install everything with:
+#     python -m pip install -r requirements.txt
+#
+# Packages are grouped by the phase that first needs them.
+# The LLM/RAG block is commented out on purpose: we install
+# those only in Phase 9, so the environment stays small and
+# every dependency has a real reason to be there.
+# ============================================================
+
+# ---------- Phase 1 — project tooling -----------------------
+python-dotenv>=1.0          # loads .env files into environment variables
+pydantic>=2.7               # validates and converts data using Python types
+pydantic-settings>=2.3      # typed application settings, read from .env
+
+# ---------- Phase 2 — analysis & data generation ------------
+pandas>=2.2                 # tabular data analysis (the analyst's workbench)
+numpy>=1.26                 # fast numeric arrays, used by pandas underneath
+matplotlib>=3.8             # charts
+jupyterlab>=4.2             # notebook environment for exploration
+ipykernel>=6.29             # lets Jupyter run our project's virtualenv
+
+# ---------- Phase 4 — database access -----------------------
+SQLAlchemy>=2.0             # Python <-> database layer (ORM + Core)
+alembic>=1.13               # versioned database migrations
+psycopg[binary]>=3.2        # PostgreSQL driver (psycopg 3, modern + binary wheels)
+
+# ---------- Phase 8 — backend API ---------------------------
+fastapi>=0.115              # web framework for our REST API
+uvicorn[standard]>=0.30     # ASGI server that actually runs FastAPI
+httpx>=0.27                 # HTTP client, used by API tests and TestClient
+
+# ---------- Phase 10-11 — statistics & machine learning -----
+scikit-learn>=1.5           # ML models (IsolationForest, regression, metrics)
+statsmodels>=0.14           # statistical / time-series models (ARIMA, ETS)
+scipy>=1.13                 # statistics toolbox (z-scores, distributions, tests)
+
+# ---------- Phase 9 — LLM / RAG stack (install later) -------
+# Uncomment this block when we reach the AI phase.
+# openai>=1.40
+# langchain>=0.3
+# langchain-openai>=0.2
+# chromadb>=0.5             # local persistent vector database for RAG
+
+# ---------- Testing — used from Phase 1 onwards -------------
+pytest>=8.2                 # test runner
+pytest-cov>=5.0             # coverage report for our tests

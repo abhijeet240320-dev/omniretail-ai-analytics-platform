@@ -1,0 +1,293 @@
+# =====================================================================
+# OmniRetail - DATABASE CONSTRAINT SPEC (candidate keys only)
+# =====================================================================
+# Everything here is a CANDIDATE. The loader does not trust this file: for
+# every candidate primary key it counts duplicate rows in the real table, and
+# for every candidate foreign key it counts orphaned rows. A constraint is
+# added ONLY if the data actually satisfies it; otherwise the loader reports
+# the violation and skips the constraint.
+#
+# WHY THIS DESIGN
+# ---------------
+# Adding a PRIMARY KEY blindly either fails the load or - far worse - tempts
+# someone to "fix" it by deleting duplicate rows. Neither is acceptable: the
+# first blocks the pipeline, the second destroys real data to satisfy a
+# declaration a human guessed at. Testing first turns an assertion into a
+# measurement, and a failed candidate becomes a documented finding about the
+# data rather than a crash or a silent deletion.
+#
+# Column types are inferred from the processed CSV, with `type_overrides`
+# below for the cases where the inference would be wrong or sloppy. The most
+# important overrides are money columns: money is NUMERIC, never a float,
+# because binary floating point cannot represent 0.10 exactly and rounding
+# errors accumulate across millions of rows.
+# =====================================================================
+
+version: 1
+
+# ---------------------------------------------------------------------
+# Type inference rules, applied in this order
+# ---------------------------------------------------------------------
+type_rules:
+  integer_types: [bigint]
+  # A float column whose name looks like money is stored as NUMERIC, not
+  # DOUBLE PRECISION. This pattern list is the reason the rule exists.
+  money_name_patterns:
+    [price, sales, discount, profit, value, total, freight, amount, monetary,
+     benefit, revenue, cost]
+  money_type: "numeric(18,4)"
+  float_type: "double precision"
+  boolean_type: "boolean"
+  timestamp_type: "timestamp"
+  date_type: "date"
+  text_type: "text"
+  # Columns ending in these suffixes are treated as booleans when they hold
+  # only true/false/empty values.
+  boolean_name_prefixes: [is_, has_]
+  timestamp_name_hints: [date, timestamp, _at]
+
+# ---------------------------------------------------------------------
+# Explicit per-column overrides where inference would be wrong
+# ---------------------------------------------------------------------
+type_overrides:
+  # High-precision geographic coordinates: double precision is correct here
+  # (they are measurements, not money) and is stated explicitly so the money
+  # pattern list can never accidentally capture them.
+  "dataco.customers.latitude": "double precision"
+  "dataco.customers.longitude": "double precision"
+  "olist.geolocation_by_zip.latitude": "double precision"
+  "olist.geolocation_by_zip.longitude": "double precision"
+  # Delivery durations are day fractions; double precision is right.
+  "olist.orders.delivery_days": "double precision"
+  "olist.orders.estimated_days": "double precision"
+  "olist.orders.delay_days": "double precision"
+  "m5.sell_prices.sell_price": "numeric(10,4)"
+  # coupon_upc is an integer code read as a float by pandas; storing it as a
+  # float would make equality joins on coupons fragile.
+  "dunnhumby.coupons.coupon_upc": "bigint"
+  "dunnhumby.coupon_redemptions.coupon_upc": "bigint"
+
+# ---------------------------------------------------------------------
+# Load order: parents before children, small before large
+# ---------------------------------------------------------------------
+load_order:
+  olist:
+    - customers
+    - products
+    - sellers
+    - orders
+    - order_items
+    - payments
+    - order_payments_agg
+    - reviews
+    - geolocation_by_zip
+    - mql
+    - closed_deals
+    - customer_rfm
+  dataco:
+    - products
+    - customers
+    - orders
+    - order_items
+  dunnhumby:
+    - products
+    - households
+    - campaigns
+    - campaign_contacts
+    - coupons
+    - coupon_redemptions
+    - transactions
+    - promo_exposure
+    - household_rfm
+  m5:
+    - calendar
+    - series
+    - sell_prices
+    - sales_long
+    - sales_daily_total
+
+# ---------------------------------------------------------------------
+# Candidate keys and foreign keys, per table
+# ---------------------------------------------------------------------
+tables:
+
+  olist:
+    customers:
+      candidate_pk: [customer_id]
+      unique_indexes:
+        - [customer_unique_id, customer_id]
+      notes: >
+        customer_id is unique per order row. customer_unique_id alone is NOT
+        unique here (the same person appears once per order), so the unique
+        index is on the PAIR, which is the honest statement of the grain.
+    products:
+      candidate_pk: [product_id]
+    sellers:
+      candidate_pk: [seller_id]
+    orders:
+      candidate_pk: [order_id]
+      candidate_fks:
+        - columns: [customer_id]
+          ref_table: customers
+          ref_columns: [customer_id]
+    order_items:
+      candidate_pk: [order_id, order_item_id]
+      candidate_fks:
+        - columns: [order_id]
+          ref_table: orders
+          ref_columns: [order_id]
+        - columns: [product_id]
+          ref_table: products
+          ref_columns: [product_id]
+        - columns: [seller_id]
+          ref_table: sellers
+          ref_columns: [seller_id]
+    payments:
+      candidate_pk: [order_id, payment_sequential]
+      candidate_fks:
+        - columns: [order_id]
+          ref_table: orders
+          ref_columns: [order_id]
+    order_payments_agg:
+      candidate_pk: [order_id]
+      candidate_fks:
+        - columns: [order_id]
+          ref_table: orders
+          ref_columns: [order_id]
+    reviews:
+      # review_id alone is NOT the grain. Forensic query
+      # olist.review_id_forensics shows why: of the 789 repeated review_ids,
+      # 764 appear twice and 25 three times, and EVERY group has identical
+      # title, message, score, review_creation_date AND review_answer_timestamp,
+      # and belongs to exactly one person. There was only ever one review per
+      # group - a genuine re-submission would carry its own timestamps.
+      # 32 of those reviews name an order placed AFTER the review was written,
+      # which a real customer could not do, so the extra rows are a one-to-many
+      # fan-out in Olist's export rather than customer behaviour.
+      # The honest grain is therefore one row per (review, order) association,
+      # which is unique with zero surplus rows.
+      candidate_pk: [review_id, order_id]
+      notes: >
+        MEASURED RESULT: ACCEPTED on (review_id, order_id) - 99,224 rows, 0
+        surplus, 0 NULLs. See olist.review_grain_candidates, which tests all
+        three candidate keys side by side.
+        Note for analysis: because one review is attached to several orders,
+        any per-order review metric (reviews per order, score by order) counts
+        the same review more than once. Score distribution over review ROWS is
+        the honest basis; anything joining reviews to orders must fan out
+        deliberately.
+    geolocation_by_zip:
+      candidate_pk: [geolocation_zip_code_prefix]
+    mql:
+      candidate_pk: [mql_id]
+    closed_deals:
+      candidate_pk: [mql_id]
+      candidate_fks:
+        - columns: [mql_id]
+          ref_table: mql
+          ref_columns: [mql_id]
+    customer_rfm:
+      candidate_pk: [customer_unique_id]
+
+  dataco:
+    products:
+      candidate_pk: [product_card_id]
+    customers:
+      candidate_pk: [customer_id]
+    orders:
+      candidate_pk: [order_id]
+      candidate_fks:
+        - columns: [customer_id]
+          ref_table: customers
+          ref_columns: [customer_id]
+    order_items:
+      candidate_pk: [order_item_id]
+      candidate_fks:
+        - columns: [order_id]
+          ref_table: orders
+          ref_columns: [order_id]
+        - columns: [product_card_id]
+          ref_table: products
+          ref_columns: [product_card_id]
+
+  dunnhumby:
+    products:
+      candidate_pk: [product_id]
+    households:
+      candidate_pk: [household_key]
+      notes: >
+        Covers only 801 of ~2,500 transacting households. Any foreign key from
+        transactions to this table is EXPECTED to have orphans - that is a real
+        property of the dataset, not a defect, and it is why no such FK is
+        declared below.
+    campaigns:
+      candidate_pk: [campaign]
+    campaign_contacts:
+      candidate_pk: [household_key, campaign]
+    coupons:
+      candidate_pk: [coupon_upc, product_id, campaign]
+    coupon_redemptions:
+      candidate_pk: [household_key, day, coupon_upc]
+      notes: >
+        MEASURED RESULT: REJECTED. 14 surplus rows across 14 key values: the
+        same household redeems the same UPC on the same day twice. The Dunn &
+        Bradstreet Complete Journey source records these as two redemptions, so
+        the honest grain is one row PER REDEMPTION, not one row per
+        (household, day, coupon). A surrogate key would be the fix if uniqueness
+        were ever needed; nothing is deleted to force the candidate to hold.
+    transactions:
+      # Basket lines. Whether a product can appear twice in one basket is a
+      # real question, so this key is TESTED rather than assumed.
+      candidate_pk: [household_key, basket_id, product_id]
+      candidate_fks:
+        - columns: [product_id]
+          ref_table: products
+          ref_columns: [product_id]
+    promo_exposure:
+      # The grain includes the promotional payload itself. Measured: the
+      # narrower (product_id, store_id, week_no) has 15,245 duplicate groups
+      # of exactly 2 rows each (30,490 rows total), and in EVERY group the
+      # display/mailer pair differs -- e.g. 27658|361|59|0|D alongside
+      # 27658|361|59|6|D. That is the source saying "this product was on
+      # display for one part of the week and on a mailer for another", not a
+      # duplication defect. Adding display+mailer to the key yields 0 surplus
+      # rows and 0 NULLs across all five columns, so it is declared as the real
+      # key rather than rejected.
+      candidate_pk: [product_id, store_id, week_no, display, mailer]
+      candidate_fks:
+        - columns: [product_id]
+          ref_table: products
+          ref_columns: [product_id]
+    household_rfm:
+      candidate_pk: [household_key]
+
+  m5:
+    calendar:
+      candidate_pk: [d_num]
+      unique_indexes:
+        - [date]
+      notes: >
+        d_num is the integer day index and the natural join key. date is also
+        unique and gets its own index rather than being the primary key, so
+        joins stay numeric.
+    series:
+      candidate_pk: [id]
+    sell_prices:
+      candidate_pk: [store_id, item_id, wm_yr_wk]
+    sales_long:
+      # 59 million rows. A primary key here builds a large b-tree index, which
+      # is worth it because every forecasting query filters or joins on it.
+      candidate_pk: [id, d_num]
+      candidate_fks:
+        - columns: [id]
+          ref_table: series
+          ref_columns: [id]
+        - columns: [d_num]
+          ref_table: calendar
+          ref_columns: [d_num]
+    sales_daily_total:
+      candidate_pk: [d_num]
+      candidate_fks:
+        - columns: [d_num]
+          ref_table: calendar
+          ref_columns: [d_num]

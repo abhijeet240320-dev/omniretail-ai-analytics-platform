@@ -1,0 +1,307 @@
+# Output lineage: for every MAJOR ANALYTICAL OUTPUT, where it came from.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# `docs/data_lineage.md` traces RAW -> PROCESSED -> DATABASE and stops there,
+# because it is generated from the dataset manifest and the loader reports. That
+# covers provenance of the data. It does not answer the question a reader
+# actually has about a number on screen: "which table, at what grain, through
+# which query, via which endpoint, on which page?"
+#
+# So this file records that, and `backend/tests/test_output_lineage.py`
+# verifies EVERY field against the running system:
+#
+#   source          must be one of the four real schemas
+#   table           must exist in PostgreSQL with the stated grain column
+#   sql             must name a query in the live catalogue, not a paraphrase
+#   endpoint        must be a route actually registered on the FastAPI app
+#   frontend_route  must be a page id actually defined in routes.ts
+#   transformation  must be the real ETL module for that source
+#
+# A field that cannot be checked is not in this file. There is no "unknown" and
+# no "TBD" here, because either the fact is verifiable or the output does not
+# get a lineage entry.
+#
+# Generated-adjacent, hand-maintained: the INTENT (which output belongs on which
+# page) is a judgement; everything else is verified against reality on every
+# test run.
+
+version: 1
+
+outputs:
+  # ---------------------------------------------------------------- Overview
+  - output: Per-source KPI tiles (revenue, orders, customers, rates)
+    source: olist
+    table: olist.orders
+    grain: one row per order_id
+    transformation: backend/etl/olist.py
+    sql: olist.monthly_revenue_trend
+    endpoint: /api/overview
+    frontend_route: overview
+    note: >-
+      One KPI tile per source, never a fifth tile that adds them. The Overview
+      renders four source cards and the API's own `disclaimer` verbatim.
+
+  - output: Per-source KPI tiles (revenue, orders, margin)
+    source: dataco
+    table: dataco.orders
+    grain: one row per order_id
+    transformation: backend/etl/dataco.py
+    sql: dataco.revenue_by_market
+    endpoint: /api/overview
+    frontend_route: overview
+    note: DataCo margin is a percentage of its own revenue and is not comparable
+      to any other source's margin.
+
+  - output: Per-source KPI tiles (basket lines, gross sales, households)
+    source: dunnhumby
+    table: dunnhumby.transactions
+    grain: one row per (household_key, basket_id, product_id)
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.sales_mix_by_department
+    endpoint: /api/overview
+    frontend_route: overview
+    note: >-
+      Two household counts are shown deliberately - 801 with demographics and
+      2,500 transacting - because any household-level statistic depends on which
+      population it covers.
+
+  - output: Per-source KPI tiles (series days, units, stores, items)
+    source: m5
+    table: m5.sales_long
+    grain: one row per (id, d_num); repeated ids are legitimate
+    transformation: backend/etl/m5.py
+    sql: m5.demand_scale_by_hierarchy
+    endpoint: /api/overview
+    frontend_route: overview
+    note: >-
+      59,181,090 rows are 30,490 series x 1,941 days. The grain is the pair,
+      not the id, so `count(distinct id)` is 30,490 and `count(*)` is not.
+
+  # ------------------------------------------------------------------- Sales
+  - output: Revenue trend and geographic concentration
+    source: olist
+    table: olist.orders
+    grain: one row per order_id
+    transformation: backend/etl/olist.py
+    sql: olist.monthly_revenue_trend
+    endpoint: /api/analytics/queries/olist.monthly_revenue_trend
+    frontend_route: sales
+
+  - output: Revenue by geographic market
+    source: dataco
+    table: dataco.orders
+    grain: one row per order_id
+    transformation: backend/etl/dataco.py
+    sql: dataco.revenue_by_market
+    endpoint: /api/analytics/queries/dataco.revenue_by_market
+    frontend_route: sales
+
+  - output: Sales mix by department
+    source: dunnhumby
+    table: dunnhumby.transactions
+    grain: one row per (household_key, basket_id, product_id)
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.sales_mix_by_department
+    endpoint: /api/analytics/queries/dunnhumby.sales_mix_by_department
+    frontend_route: sales
+
+  # --------------------------------------------------------------- Customers
+  - output: Repeat-purchase behaviour
+    source: olist
+    table: olist.orders
+    grain: one row per order_id
+    transformation: backend/etl/olist.py
+    sql: olist.customer_repeat_behaviour
+    endpoint: /api/analytics/queries/olist.customer_repeat_behaviour
+    frontend_route: customers
+    note: >-
+      96.88% of olist.customers place exactly one order, so customer_id counts
+      orders and customer_unique_id counts people. The query uses the latter.
+
+  - output: Buyer segments
+    source: dataco
+    table: dataco.orders
+    grain: one row per order_id
+    transformation: backend/etl/dataco.py
+    sql: dataco.customer_segments
+    endpoint: /api/analytics/queries/dataco.customer_segments
+    frontend_route: customers
+
+  - output: RFM segment value
+    source: dunnhumby
+    table: dunnhumby.household_rfm
+    grain: one row per household_key
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.rfm_segment_value
+    endpoint: /api/analytics/queries/dunnhumby.rfm_segment_value
+    frontend_route: customers
+    note: >-
+      Covers the 801 households that have demographics. The 1,699 transacting
+      households with no demographics have a NULL classification_3.
+
+  # ---------------------------------------------------------------- Products
+  - output: Margin by department
+    source: dataco
+    table: dataco.products
+    grain: one row per product_card_id
+    transformation: backend/etl/dataco.py
+    sql: dataco.margin_by_department
+    endpoint: /api/analytics/queries/dataco.margin_by_department
+    frontend_route: products
+
+  - output: Demand scale by item and store hierarchy
+    source: m5
+    table: m5.sales_long
+    grain: one row per (id, d_num)
+    transformation: backend/etl/m5.py
+    sql: m5.demand_scale_by_hierarchy
+    endpoint: /api/analytics/queries/m5.demand_scale_by_hierarchy
+    frontend_route: products
+    note: >-
+      The slowest catalogued query in the project - a full scan of 59,181,090
+      rows - and the reason `STATEMENT_TIMEOUT_MS` exists.
+
+  # --------------------------------------------------------------- Marketing
+  - output: Campaign performance
+    source: dunnhumby
+    table: dunnhumby.campaigns
+    grain: one row per campaign
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.campaign_performance
+    endpoint: /api/analytics/queries/dunnhumby.campaign_performance
+    frontend_route: marketing
+
+  - output: Coupon redemption
+    source: dunnhumby
+    table: dunnhumby.coupon_redemptions
+    grain: NO PRIMARY KEY; the candidate key has 14 duplicate groups
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.coupon_redemption
+    endpoint: /api/analytics/queries/dunnhumby.coupon_redemption
+    frontend_route: marketing
+    note: >-
+      Redemption Rows is counted with COUNTROWS, never DISTINCTCOUNT, because
+      the table has no primary key and the candidate key is not unique.
+
+  - output: Event-day impact
+    source: m5
+    table: m5.calendar
+    grain: one row per d_num
+    transformation: backend/etl/m5.py
+    sql: m5.event_day_impact
+    endpoint: /api/analytics/queries/m5.event_day_impact
+    frontend_route: marketing
+
+  # -------------------------------------------------------------- Operations
+  - output: Order status funnel
+    source: olist
+    table: olist.orders
+    grain: one row per order_id
+    transformation: backend/etl/olist.py
+    sql: olist.order_status_funnel
+    endpoint: /api/analytics/queries/olist.order_status_funnel
+    frontend_route: operations
+
+  - output: Shipping performance
+    source: dataco
+    table: dataco.orders
+    grain: one row per order_id
+    transformation: backend/etl/dataco.py
+    sql: dataco.shipping_performance
+    endpoint: /api/analytics/queries/dataco.shipping_performance
+    frontend_route: operations
+
+  - output: Delivery performance
+    source: olist
+    table: olist.orders
+    grain: one row per order_id
+    transformation: backend/etl/olist.py
+    sql: olist.delivery_performance
+    endpoint: /api/analytics/queries/olist.delivery_performance
+    frontend_route: operations
+
+  # ------------------------------------------------------------ Intelligence
+  - output: Forecast evaluation and per-band comparison
+    source: m5
+    table: m5.sales_long
+    grain: one row per (id, d_num); 30,490 series, 1,941 actual days
+    transformation: backend/etl/m5.py
+    sql: m5.demand_scale_by_hierarchy
+    endpoint: /api/forecasting
+    frontend_route: forecast
+    note: >-
+      Reads data/processed/_forecast_results.json, which backend/scripts/ml/01_
+      evaluate_forecast.py wrote by training five models on all 30,490 series
+      against a 28-day holdout (train d_num 1..1913, test 1914..1941). Not
+      executed per request - the artefact is read.
+
+  - output: Anomaly detection runs
+    source: olist
+    table: olist.orders
+    grain: one row per order per day
+    transformation: backend/etl/olist.py
+    sql: olist.monthly_revenue_trend
+    endpoint: /api/anomalies
+    frontend_route: anomalies
+    note: >-
+      Reads data/processed/_anomaly_results.json. Same-weekday rolling mean over
+      28 weeks at |z| >= 3. Not executed per request.
+
+  - output: Anomaly detection runs (basket lines)
+    source: dunnhumby
+    table: dunnhumby.transactions
+    grain: one row per (household_key, basket_id, product_id), summed to a day
+    transformation: backend/etl/dunnhumby.py
+    sql: dunnhumby.sales_mix_by_department
+    endpoint: /api/anomalies
+    frontend_route: anomalies
+    note: 30-day rolling median with 1.4826 x MAD at |z| >= 3.
+
+  - output: Anomaly detection runs (total daily units)
+    source: m5
+    table: m5.sales_long
+    grain: one row per (id, d_num)
+    transformation: backend/etl/m5.py
+    sql: m5.demand_scale_by_hierarchy
+    endpoint: /api/anomalies
+    frontend_route: anomalies
+    note: >-
+      56-day rolling mean and standard deviation at |z| >= 4. All five flagged
+      days are Christmas Day.
+
+  - output: Natural-language answers with row-level evidence
+    source: olist
+    table: olist.orders
+    grain: whatever the SELECTED CATALOGUED QUERY has; never improvised
+    transformation: backend/etl/olist.py
+    sql: olist.monthly_revenue_trend
+    endpoint: /api/ai/ask
+    frontend_route: analyst
+    note: >-
+      The analyst returns one of the 41 catalogued statements verbatim. The
+      `table` and `grain` above are therefore those of the SELECTED query, not
+      of the analyst; this row documents the representative case only.
+
+# Artefacts that are NOT SQL queries and must not be traced through the
+# catalogue. Listed so that a reader looking for "where did this come from"
+# finds the real answer for them too.
+artefacts:
+  - name: data/processed/_load_report.json
+    produced_by: backend/load/loader.py
+    describes: rows actually copied into PostgreSQL, per source per table
+  - name: data/processed/_audit_report.json
+    produced_by: backend/scripts/db/07_data_truth_audit.py
+    describes: write probes refused by omniretail_readonly, and the data audit
+  - name: data/processed/_sql_results.json
+    produced_by: backend/scripts/sql/run_analytics.py
+    describes: the result of executing each of the 41 catalogued queries
+  - name: data/processed/_forecast_results.json
+    produced_by: backend/scripts/ml/01_evaluate_forecast.py
+    describes: five models x 30,490 series against a 28-day holdout
+  - name: data/processed/_anomaly_results.json
+    produced_by: backend/scripts/ml/02_detect_anomalies.py
+    describes: three detectors, one per source, with baselines and thresholds
+  - name: data/raw/_checksums.json
+    produced_by: backend/scripts/data/01_download.py
+    describes: SHA-256 of every raw file, the root of all provenance

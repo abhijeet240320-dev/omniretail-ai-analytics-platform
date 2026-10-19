@@ -1,0 +1,343 @@
+# =====================================================================
+# OmniRetail - EXPECTED SCHEMAS
+# =====================================================================
+# What the files are SUPPOSED to look like, based on the publishers'
+# documentation researched before any download.
+#
+# 02_verify.py checks the real files against this file. The point is to
+# catch the failure mode where a mirror silently serves a truncated,
+# re-ordered or older revision of a dataset: the numbers would still look
+# plausible, so without an explicit contract we would never notice.
+#
+# `required_columns` is a SUBSET check, not an equality check. Real
+# releases gain and lose columns between revisions, so we assert that the
+# columns our analysis actually depends on are present, and merely report
+# anything extra. That is stricter where it matters and forgiving where it
+# does not.
+#
+# `key_columns` names the columns whose min/max we print during
+# verification, to confirm the date range matches the published one.
+# =====================================================================
+
+version: 1
+
+sources:
+
+  dunnhumby:
+    files:
+      transaction_data.csv:
+        required_columns:
+          - household_key
+          - BASKET_ID
+          - DAY
+          - PRODUCT_ID
+          - QUANTITY
+          - SALES_VALUE
+          - STORE_ID
+          - RETAIL_DISC
+          - TRANS_TIME
+          - WEEK_NO
+          - COUPON_DISC
+          - COUPON_MATCH_DISC
+        key_columns: [DAY, WEEK_NO]
+        notes: >
+          Basket-level transaction lines. One row = one product on one
+          shopping trip. BASKET_ID is not globally unique on its own; the
+          real basket key is (household_key, BASKET_ID).
+
+      product.csv:
+        required_columns:
+          - PRODUCT_ID
+          - MANUFACTURER
+          - DEPARTMENT
+          - BRAND
+          - COMMODITY_DESC
+          - SUB_COMMODITY_DESC
+        key_columns: [PRODUCT_ID]
+        notes: "Product master. PRODUCT_ID is the primary key."
+
+      hh_demographic.csv:
+        # REAL FINDING (2026-10-03): dunnhumby's current Source Files release
+        # has ANONYMISED five of the demographic columns. The widely-copied
+        # Kaggle revision has readable names (AGE_DESC, INCOME_DESC,
+        # MARITAL_STATUS_CODE, HH_COMP_DESC, HOUSEHOLD_SIZE_DESC); the
+        # official dunnhumby zip we downloaded ships them as
+        # classification_1 .. classification_5 instead.
+        #
+        # The VALUES are still human-readable ("Age Group6", "Level4",
+        # "Group5", ...), so demographic analysis is still possible - but any
+        # code that assumes the Kaggle column names will fail. We therefore
+        # verify against what the publisher actually shipped, and the mapping
+        # from classification_N to meaning is documented in docs/data_dictionary.md.
+        required_columns:
+          - household_key
+          - classification_1
+          - classification_2
+          - classification_3
+          - classification_4
+          - classification_5
+          - HOMEOWNER_DESC
+          - KID_CATEGORY_DESC
+        key_columns: [household_key]
+        notes: >
+          Household attributes, covering a SUBSET of households only (801 rows
+          vs ~2,500 in transactions). Five columns are anonymised as
+          classification_1..5 in the official release.
+
+      campaign_desc.csv:
+        required_columns: [DESCRIPTION, CAMPAIGN, START_DAY, END_DAY]
+        key_columns: [CAMPAIGN]
+        notes: "Campaign calendar. CAMPAIGN is the primary key."
+
+      campaign_table.csv:
+        required_columns: [household_key, CAMPAIGN, DESCRIPTION]
+        key_columns: [CAMPAIGN]
+        notes: "Which households were targeted by which campaign."
+
+      coupon.csv:
+        required_columns: [COUPON_UPC, PRODUCT_ID, CAMPAIGN]
+        key_columns: [CAMPAIGN]
+        notes: "Coupon to product/campaign mapping."
+
+      coupon_redempt.csv:
+        required_columns: [household_key, DAY, COUPON_UPC, CAMPAIGN]
+        key_columns: [DAY]
+        notes: "Coupon redemption events."
+
+      causal_data.csv:
+        required_columns: [PRODUCT_ID, STORE_ID, WEEK_NO, display, mailer]
+        key_columns: [WEEK_NO]
+        # note: the real file has a leading unnamed index column; we keep it
+        # in raw and drop it during cleaning.
+        notes: >
+          Weekly promotional exposure by product and store: whether the item
+          was in a display and/or in the mailer. This is what makes a real
+          promotion-lift analysis possible.
+
+  dataco:
+    files:
+      DataCoSupplyChainDataset.csv:
+        # Column names contain spaces, so they must always be quoted in SQL.
+        required_columns:
+          - "Type"
+          - "Days for shipping (real)"
+          - "Days for shipment (scheduled)"
+          - "Delivery Status"
+          - "Late_delivery_risk"
+          - "Category Name"
+          - "Customer Id"
+          - "Customer Segment"
+          - "Department Name"
+          - "Market"
+          - "Order Country"
+          - "order date (DateOrders)"
+          - "Order Id"
+          - "Order Item Discount"
+          - "Order Item Product Price"
+          - "Order Item Profit Ratio"
+          - "Order Item Quantity"
+          - "Sales"
+          - "Order Item Total"
+          - "Order Profit Per Order"
+          - "Order Region"
+          - "Order Status"
+          - "Product Name"
+          - "Product Price"
+          - "shipping date (DateOrders)"
+          - "Shipping Mode"
+        key_columns:
+          - "order date (DateOrders)"
+          - "shipping date (DateOrders)"
+        encoding: latin-1
+        notes: >
+          One row per order LINE (Order Id repeats across lines). This file
+          mixes order, customer, product and logistics attributes into one
+          denormalised table, which is exactly why the SQL layer has to
+          normalise it into orders / customers / products / shipping.
+
+      DescriptionDataCoSupplyChain.csv:
+        # The real header is FIELDS,DESCRIPTION (upper case), and each value in
+        # the FIELDS column carries a trailing colon before the colon that
+        # separates it from its description, e.g.
+        #   "Days for shipping (real)     ,:  Actual shipping days ..."
+        # Both quirks are preserved in raw and normalised only in processed.
+        required_columns: [FIELDS, DESCRIPTION]
+        key_columns: [FIELDS]
+        encoding: latin-1
+        notes: "Publisher's field dictionary. Used to build the data dictionary."
+
+  olist:
+    files:
+      olist_orders_dataset.csv:
+        required_columns:
+          - order_id
+          - customer_id
+          - order_status
+          - order_purchase_timestamp
+          - order_approved_at
+          - order_delivered_carrier_date
+          - order_delivered_customer_date
+          - order_estimated_delivery_date
+        key_columns: [order_purchase_timestamp, order_delivered_customer_date]
+        notes: "One row per order. order_id is the primary key."
+
+      olist_order_items_dataset.csv:
+        required_columns:
+          - order_id
+          - order_item_id
+          - product_id
+          - seller_id
+          - shipping_limit_date
+          - price
+          - freight_value
+        key_columns: [shipping_limit_date]
+        notes: "One row per item within an order. Key is (order_id, order_item_id)."
+
+      olist_order_payments_dataset.csv:
+        required_columns:
+          - order_id
+          - payment_sequential
+          - payment_type
+          - payment_installments
+          - payment_value
+        key_columns: [order_id]
+        notes: >
+          One row per payment METHOD, so an order can have several rows.
+          Never join this to items without aggregating first, or revenue
+          will be double counted.
+
+      olist_order_reviews_dataset.csv:
+        required_columns:
+          - review_id
+          - order_id
+          - review_score
+          - review_creation_date
+          - review_answer_timestamp
+        key_columns: [review_creation_date]
+        notes: >
+          MEASURED, not assumed. review_id is NOT unique here and is not the
+          grain. 99,224 rows carry 98,410 distinct review_ids: 764 ids appear
+          twice and 25 appear three times. Every duplicated group shares an
+          identical score, title, message, review_creation_date AND
+          review_answer_timestamp, and belongs to exactly one person - so there
+          was only one review, attached to several of that customer's orders.
+          32 of those reviews name an order placed AFTER the review was written,
+          which is impossible for real customer behaviour. The grain is one row
+          per (review, order) link; that pair is unique with zero surplus. See
+          olist.review_id_forensics in docs/sql_analytics.md.
+          Consequences for analysis: one review counts once per review ROW, but
+          per-ORDER review metrics will count it once per linked order.
+
+      olist_customers_dataset.csv:
+        required_columns:
+          - customer_id
+          - customer_unique_id
+          - customer_zip_code_prefix
+          - customer_city
+          - customer_state
+        key_columns: [customer_state]
+        notes: >
+          customer_id is per-order; customer_unique_id identifies the actual
+          person. Repeat-customer analysis MUST use customer_unique_id.
+
+      olist_products_dataset.csv:
+        required_columns:
+          - product_id
+          - product_category_name
+          - product_name_lenght
+          - product_description_lenght
+          - product_photos_qty
+          - product_weight_g
+          - product_length_cm
+          - product_height_cm
+          - product_width_cm
+        key_columns: [product_category_name]
+        notes: >
+          "lenght" is misspelled in the original release. We keep the
+          original spelling in the raw layer and correct it only in
+          processed/analytics layers, so raw stays byte-faithful.
+
+      olist_sellers_dataset.csv:
+        required_columns:
+          - seller_id
+          - seller_zip_code_prefix
+          - seller_city
+          - seller_state
+        key_columns: [seller_state]
+
+      product_category_name_translation.csv:
+        required_columns: [product_category_name, product_category_name_english]
+        key_columns: [product_category_name]
+
+      olist_marketing_qualified_leads_dataset.csv:
+        required_columns: [mql_id, first_contact_date, landing_page_id, origin]
+        key_columns: [first_contact_date]
+        notes: "Marketing funnel: qualified leads."
+
+      olist_closed_deals_dataset.csv:
+        required_columns:
+          - mql_id
+          - seller_id
+          - sdr_id
+          - sr_id
+          - won_date
+          - business_segment
+          - lead_type
+          - business_type
+          - declared_monthly_revenue
+        key_columns: [won_date]
+        notes: "Marketing funnel: leads that became sellers."
+
+      olist_geolocation_dataset.csv:
+        required_columns:
+          - geolocation_zip_code_prefix
+          - geolocation_lat
+          - geolocation_lng
+          - geolocation_city
+          - geolocation_state
+        key_columns: [geolocation_state]
+        notes: >
+          ~1M rows with many duplicate zip prefixes. Aggregate before use.
+
+  m5:
+    files:
+      calendar.csv:
+        required_columns:
+          - date
+          - wm_yr_wk
+          - weekday
+          - wday
+          - month
+          - year
+          - d
+          - event_name_1
+          - event_type_1
+          - snap_CA
+          - snap_TX
+          - snap_WI
+        key_columns: [date]
+        notes: "One row per day, d_1..d_1969. Links d_N column names to real dates."
+
+      sales_train_evaluation.csv:
+        required_columns:
+          - id
+          - item_id
+          - dept_id
+          - cat_id
+          - store_id
+          - state_id
+          - d_1
+        # d_1941 is checked programmatically as the last day column.
+        wide_day_columns:
+          prefix: d_
+          first: 1
+          last: 1941
+        key_columns: [id]
+        notes: >
+          WIDE format: one row per item-store, one column per day. Must be
+          melted to long form before it can be stored in a relational table.
+
+      sell_prices.csv:
+        required_columns: [store_id, item_id, wm_yr_wk, sell_price]
+        key_columns: [wm_yr_wk]
+        notes: "Weekly price per item per store. Key is (store_id, item_id, wm_yr_wk)."

@@ -1,0 +1,577 @@
+"""baseline: 30 tables across four source schemas
+
+Revision ID: baseline
+Revises:
+Create Date: 2026-10-03 11:16:51.835791+00:00
+
+HOW THIS FILE WAS PRODUCED (and what was changed afterwards)
+------------------------------------------------------------
+The 30 `op.create_table()` calls below are Alembic's own output, UNMODIFIED.
+They were generated with
+
+    POSTGRES_DB=omniretail_migration_build \\
+        .venv/Scripts/python.exe -m alembic revision --autogenerate ...
+
+against a deliberately EMPTY scratch database, which is the only way to get
+autogenerate to emit CREATE TABLE rather than an empty diff. Against the real,
+already-loaded database the same command produces nothing at all, because the
+models and the database already agree.
+
+The table order is Alembic's dependency sort, not alphabet: `dataco.customers`
+is created before `dataco.orders` because of the foreign key. Do not reorder.
+
+WHAT WAS ADDED BY HAND
+----------------------
+1. The CREATE SCHEMA block below. Alembic 1.20.0 has no `create_schema` op and
+   autogenerate never emits one (grep the package: `create_schema` appears in
+   `operations/` only). Without it this migration fails on a genuinely empty
+   database with `schema "olist" does not exist`, so it was added.
+
+   `AUTHORIZATION` is deliberately omitted. The bootstrap pins each schema to
+   the `omniretail` role, but naming a role in a migration couples the schema
+   history to a role that may be renamed or may not exist yet; a plain
+   `CREATE SCHEMA` makes the running role the owner, which is what happens in
+   practice anyway because migrations run as `omniretail`.
+
+2. `COMMENT ON SCHEMA`, copied verbatim from
+   backend/sql/00_bootstrap/03_schemas_and_grants.sql so the provenance
+   annotations survive a from-scratch build. Those two files now duplicate that
+   text, so `test_migration_schemas_match_bootstrap` asserts they agree - the
+   duplication is pinned, not merely tolerated.
+
+3. The downgrade block drops the schemas as well.
+
+WHAT IS DELIBERATELY NOT HERE: roles, the database itself, and GRANTs. Those
+belong to `backend/scripts/db/bootstrap_db.py`, which runs before Alembic and
+already exists. A migration that granted to `omniretail_readonly` would abort
+on any database where that role had not been created yet, turning a
+convenience into a startup ordering hazard.
+
+READ THIS BEFORE TRUSTING AN EMPTY DIFF
+---------------------------------------
+`alembic revision --autogenerate` returning zero ops does NOT mean the models
+match the database. Alembic 1.20.0's autogenerate compares unique constraints,
+indexes, foreign keys and check constraints - it has NO primary-key comparator
+at all (`compare_primary_key` does not exist in the package), so
+`create_primary_key` / `drop_primary_key` can never appear in a diff for an
+existing table.
+
+That is why `dunnhumby.coupon_redemptions` below has NO PrimaryKeyConstraint,
+and why that is CORRECT rather than a defect: its candidate key
+(household_key, day, coupon_upc) was tested against the real rows and rejected,
+because 14 rows genuinely repeat it. A surrogate key would have fabricated an
+identity the data refused to support.
+
+The authoritative check is `test_primary_keys_match` in
+backend/tests/test_models_match_catalog.py, which compares every key column by
+column against pg_constraint.
+"""
+from __future__ import annotations
+
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = 'baseline'
+down_revision: Union[str, None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    # -----------------------------------------------------------------------
+    # ADDED BY HAND - Alembic autogenerate cannot emit these (see docstring).
+    # Order matters: schemas first, then tables, then the provenance comments.
+    # -----------------------------------------------------------------------
+    op.execute("CREATE SCHEMA IF NOT EXISTS dunnhumby")
+    op.execute("CREATE SCHEMA IF NOT EXISTS dataco")
+    op.execute("CREATE SCHEMA IF NOT EXISTS olist")
+    op.execute("CREATE SCHEMA IF NOT EXISTS m5")
+    op.execute("CREATE SCHEMA IF NOT EXISTS analytics")
+
+    op.execute("COMMENT ON SCHEMA dunnhumby IS 'Source: dunnhumby The Complete Journey. Grocery customer/promotion analytics.'")
+    op.execute("COMMENT ON SCHEMA dataco IS 'Source: DataCo SMART Supply Chain. Operations and late-delivery analytics.'")
+    op.execute("COMMENT ON SCHEMA olist IS 'Source: Olist Brazilian E-Commerce. E-commerce order/review/geo analytics.'")
+    op.execute("COMMENT ON SCHEMA m5 IS 'Source: Walmart M5. Daily demand series, calendar and prices.'")
+    op.execute("COMMENT ON SCHEMA analytics IS 'Cross-source curated layer. Every table carries source_system.'")
+
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('customers',
+    sa.Column('customer_id', sa.BigInteger(), nullable=False),
+    sa.Column('customer_fname', sa.Text(), nullable=True),
+    sa.Column('customer_lname', sa.Text(), nullable=True),
+    sa.Column('customer_segment', sa.Text(), nullable=True),
+    sa.Column('customer_city', sa.Text(), nullable=True),
+    sa.Column('customer_state', sa.Text(), nullable=True),
+    sa.Column('customer_country', sa.Text(), nullable=True),
+    sa.Column('customer_zipcode', sa.Double(), nullable=True),
+    sa.Column('latitude', sa.Double(), nullable=True),
+    sa.Column('longitude', sa.Double(), nullable=True),
+    sa.PrimaryKeyConstraint('customer_id', name='pk_dataco_customers'),
+    schema='dataco'
+    )
+    op.create_table('products',
+    sa.Column('product_card_id', sa.BigInteger(), nullable=False),
+    sa.Column('product_name', sa.Text(), nullable=True),
+    sa.Column('product_price', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('product_category_id', sa.BigInteger(), nullable=True),
+    sa.Column('category_name', sa.Text(), nullable=True),
+    sa.Column('category_id', sa.BigInteger(), nullable=True),
+    sa.Column('department_id', sa.BigInteger(), nullable=True),
+    sa.Column('department_name', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('product_card_id', name='pk_dataco_products'),
+    schema='dataco'
+    )
+    op.create_table('campaign_contacts',
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('household_key', sa.BigInteger(), nullable=False),
+    sa.Column('campaign', sa.BigInteger(), nullable=False),
+    sa.PrimaryKeyConstraint('household_key', 'campaign', name='pk_dunnhumby_campaign_contacts'),
+    schema='dunnhumby'
+    )
+    op.create_table('campaigns',
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('campaign', sa.BigInteger(), nullable=False),
+    sa.Column('start_day', sa.BigInteger(), nullable=True),
+    sa.Column('end_day', sa.BigInteger(), nullable=True),
+    sa.PrimaryKeyConstraint('campaign', name='pk_dunnhumby_campaigns'),
+    schema='dunnhumby'
+    )
+    op.create_table('coupon_redemptions',
+    sa.Column('household_key', sa.BigInteger(), nullable=True),
+    sa.Column('day', sa.BigInteger(), nullable=True),
+    sa.Column('coupon_upc', sa.BigInteger(), nullable=True),
+    sa.Column('campaign', sa.BigInteger(), nullable=True),
+    schema='dunnhumby'
+    )
+    op.create_table('coupons',
+    sa.Column('coupon_upc', sa.BigInteger(), nullable=False),
+    sa.Column('product_id', sa.BigInteger(), nullable=False),
+    sa.Column('campaign', sa.BigInteger(), nullable=False),
+    sa.PrimaryKeyConstraint('coupon_upc', 'product_id', 'campaign', name='pk_dunnhumby_coupons'),
+    schema='dunnhumby'
+    )
+    op.create_table('household_rfm',
+    sa.Column('household_key', sa.BigInteger(), nullable=False),
+    sa.Column('last_day', sa.BigInteger(), nullable=True),
+    sa.Column('first_day', sa.BigInteger(), nullable=True),
+    sa.Column('frequency', sa.BigInteger(), nullable=True),
+    sa.Column('monetary', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('total_discount', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('lines', sa.BigInteger(), nullable=True),
+    sa.Column('distinct_products', sa.BigInteger(), nullable=True),
+    sa.Column('recency_days', sa.BigInteger(), nullable=True),
+    sa.Column('lifespan_days', sa.BigInteger(), nullable=True),
+    sa.Column('avg_basket_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('discount_share', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('recency_score', sa.BigInteger(), nullable=True),
+    sa.Column('frequency_score', sa.BigInteger(), nullable=True),
+    sa.Column('monetary_score', sa.BigInteger(), nullable=True),
+    sa.Column('classification_1', sa.Text(), nullable=True),
+    sa.Column('classification_2', sa.Text(), nullable=True),
+    sa.Column('classification_3', sa.Text(), nullable=True),
+    sa.Column('HOMEOWNER_DESC', sa.Text(), nullable=True),
+    sa.Column('classification_5', sa.Text(), nullable=True),
+    sa.Column('classification_4', sa.Text(), nullable=True),
+    sa.Column('KID_CATEGORY_DESC', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('household_key', name='pk_dunnhumby_household_rfm'),
+    schema='dunnhumby'
+    )
+    op.create_table('households',
+    sa.Column('classification_1', sa.Text(), nullable=True),
+    sa.Column('classification_2', sa.Text(), nullable=True),
+    sa.Column('classification_3', sa.Text(), nullable=True),
+    sa.Column('HOMEOWNER_DESC', sa.Text(), nullable=True),
+    sa.Column('classification_5', sa.Text(), nullable=True),
+    sa.Column('classification_4', sa.Text(), nullable=True),
+    sa.Column('KID_CATEGORY_DESC', sa.Text(), nullable=True),
+    sa.Column('household_key', sa.BigInteger(), nullable=False),
+    sa.PrimaryKeyConstraint('household_key', name='pk_dunnhumby_households'),
+    schema='dunnhumby'
+    )
+    op.create_table('products',
+    sa.Column('product_id', sa.BigInteger(), nullable=False),
+    sa.Column('manufacturer', sa.BigInteger(), nullable=True),
+    sa.Column('department', sa.Text(), nullable=True),
+    sa.Column('brand', sa.Text(), nullable=True),
+    sa.Column('commodity_desc', sa.Text(), nullable=True),
+    sa.Column('sub_commodity_desc', sa.Text(), nullable=True),
+    sa.Column('curr_size_of_product', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('product_id', name='pk_dunnhumby_products'),
+    schema='dunnhumby'
+    )
+    op.create_table('calendar',
+    sa.Column('date', sa.DateTime(), nullable=True),
+    sa.Column('wm_yr_wk', sa.BigInteger(), nullable=True),
+    sa.Column('weekday', sa.Text(), nullable=True),
+    sa.Column('wday', sa.BigInteger(), nullable=True),
+    sa.Column('month', sa.BigInteger(), nullable=True),
+    sa.Column('year', sa.BigInteger(), nullable=True),
+    sa.Column('d', sa.Text(), nullable=True),
+    sa.Column('event_name_1', sa.Text(), nullable=True),
+    sa.Column('event_type_1', sa.Text(), nullable=True),
+    sa.Column('event_name_2', sa.Text(), nullable=True),
+    sa.Column('event_type_2', sa.Text(), nullable=True),
+    sa.Column('snap_ca', sa.BigInteger(), nullable=True),
+    sa.Column('snap_tx', sa.BigInteger(), nullable=True),
+    sa.Column('snap_wi', sa.BigInteger(), nullable=True),
+    sa.Column('d_num', sa.BigInteger(), nullable=False),
+    sa.PrimaryKeyConstraint('d_num', name='pk_m5_calendar'),
+    sa.UniqueConstraint('date', name='uq_m5_calendar_1'),
+    schema='m5'
+    )
+    op.create_table('sell_prices',
+    sa.Column('store_id', sa.Text(), nullable=False),
+    sa.Column('item_id', sa.Text(), nullable=False),
+    sa.Column('wm_yr_wk', sa.BigInteger(), nullable=False),
+    sa.Column('sell_price', sa.Numeric(precision=10, scale=4), nullable=True),
+    sa.PrimaryKeyConstraint('store_id', 'item_id', 'wm_yr_wk', name='pk_m5_sell_prices'),
+    schema='m5'
+    )
+    op.create_table('series',
+    sa.Column('id', sa.Text(), nullable=False),
+    sa.Column('item_id', sa.Text(), nullable=True),
+    sa.Column('dept_id', sa.Text(), nullable=True),
+    sa.Column('cat_id', sa.Text(), nullable=True),
+    sa.Column('store_id', sa.Text(), nullable=True),
+    sa.Column('state_id', sa.Text(), nullable=True),
+    sa.Column('id_base', sa.Text(), nullable=True),
+    sa.Column('horizon', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('id', name='pk_m5_series'),
+    schema='m5'
+    )
+    op.create_table('customer_rfm',
+    sa.Column('customer_unique_id', sa.Text(), nullable=False),
+    sa.Column('last_purchase', sa.Text(), nullable=True),
+    sa.Column('first_purchase', sa.Text(), nullable=True),
+    sa.Column('frequency', sa.BigInteger(), nullable=True),
+    sa.Column('monetary', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('recency_days', sa.Double(), nullable=True),
+    sa.Column('lifespan_days', sa.Double(), nullable=True),
+    sa.Column('avg_order_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('recency_score', sa.BigInteger(), nullable=True),
+    sa.Column('frequency_score', sa.BigInteger(), nullable=True),
+    sa.Column('monetary_score', sa.BigInteger(), nullable=True),
+    sa.PrimaryKeyConstraint('customer_unique_id', name='pk_olist_customer_rfm'),
+    schema='olist'
+    )
+    op.create_table('customers',
+    sa.Column('customer_id', sa.Text(), nullable=False),
+    sa.Column('customer_unique_id', sa.Text(), nullable=True),
+    sa.Column('customer_zip_code_prefix', sa.BigInteger(), nullable=True),
+    sa.Column('customer_city', sa.Text(), nullable=True),
+    sa.Column('customer_state', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('customer_id', name='pk_olist_customers'),
+    sa.UniqueConstraint('customer_unique_id', 'customer_id', name='uq_olist_customers_1'),
+    schema='olist'
+    )
+    op.create_table('geolocation_by_zip',
+    sa.Column('geolocation_zip_code_prefix', sa.BigInteger(), nullable=False),
+    sa.Column('latitude', sa.Double(), nullable=True),
+    sa.Column('longitude', sa.Double(), nullable=True),
+    sa.Column('points', sa.BigInteger(), nullable=True),
+    sa.Column('city', sa.Text(), nullable=True),
+    sa.Column('state', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('geolocation_zip_code_prefix', name='pk_olist_geolocation_by_zip'),
+    schema='olist'
+    )
+    op.create_table('mql',
+    sa.Column('mql_id', sa.Text(), nullable=False),
+    sa.Column('first_contact_date', sa.DateTime(), nullable=True),
+    sa.Column('landing_page_id', sa.Text(), nullable=True),
+    sa.Column('origin', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('mql_id', name='pk_olist_mql'),
+    schema='olist'
+    )
+    op.create_table('products',
+    sa.Column('product_id', sa.Text(), nullable=False),
+    sa.Column('product_category_name', sa.Text(), nullable=True),
+    sa.Column('product_name_length', sa.Double(), nullable=True),
+    sa.Column('product_description_length', sa.Double(), nullable=True),
+    sa.Column('product_photos_qty', sa.Double(), nullable=True),
+    sa.Column('product_weight_g', sa.Double(), nullable=True),
+    sa.Column('product_length_cm', sa.Double(), nullable=True),
+    sa.Column('product_height_cm', sa.Double(), nullable=True),
+    sa.Column('product_width_cm', sa.Double(), nullable=True),
+    sa.Column('product_category_name_english', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('product_id', name='pk_olist_products'),
+    schema='olist'
+    )
+    op.create_table('reviews',
+    sa.Column('review_id', sa.Text(), nullable=False),
+    sa.Column('order_id', sa.Text(), nullable=False),
+    sa.Column('review_score', sa.BigInteger(), nullable=True),
+    sa.Column('review_comment_title', sa.Text(), nullable=True),
+    sa.Column('review_comment_message', sa.Text(), nullable=True),
+    sa.Column('review_creation_date', sa.DateTime(), nullable=True),
+    sa.Column('review_answer_timestamp', sa.DateTime(), nullable=True),
+    sa.Column('review_response_hours', sa.Double(), nullable=True),
+    sa.PrimaryKeyConstraint('review_id', 'order_id', name='pk_olist_reviews'),
+    schema='olist'
+    )
+    op.create_table('sellers',
+    sa.Column('seller_id', sa.Text(), nullable=False),
+    sa.Column('seller_zip_code_prefix', sa.BigInteger(), nullable=True),
+    sa.Column('seller_city', sa.Text(), nullable=True),
+    sa.Column('seller_state', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('seller_id', name='pk_olist_sellers'),
+    schema='olist'
+    )
+    op.create_table('orders',
+    sa.Column('order_id', sa.BigInteger(), nullable=False),
+    sa.Column('customer_id', sa.BigInteger(), nullable=True),
+    sa.Column('type', sa.Text(), nullable=True),
+    sa.Column('order_date', sa.DateTime(), nullable=True),
+    sa.Column('shipping_date', sa.DateTime(), nullable=True),
+    sa.Column('days_for_shipping_real', sa.BigInteger(), nullable=True),
+    sa.Column('days_for_shipment_scheduled', sa.BigInteger(), nullable=True),
+    sa.Column('shipping_delay_days', sa.BigInteger(), nullable=True),
+    sa.Column('lead_time_days', sa.Double(), nullable=True),
+    sa.Column('delivery_status', sa.Text(), nullable=True),
+    sa.Column('is_late', sa.Boolean(), nullable=True),
+    sa.Column('order_status', sa.Text(), nullable=True),
+    sa.Column('shipping_mode', sa.Text(), nullable=True),
+    sa.Column('market', sa.Text(), nullable=True),
+    sa.Column('order_region', sa.Text(), nullable=True),
+    sa.Column('order_country', sa.Text(), nullable=True),
+    sa.Column('order_state', sa.Text(), nullable=True),
+    sa.Column('order_city', sa.Text(), nullable=True),
+    sa.Column('order_items_count', sa.BigInteger(), nullable=True),
+    sa.Column('total_quantity', sa.BigInteger(), nullable=True),
+    sa.Column('order_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_sales', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_profit', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.ForeignKeyConstraint(['customer_id'], ['dataco.customers.customer_id'], name='fk_dataco_orders_customer_id'),
+    sa.PrimaryKeyConstraint('order_id', name='pk_dataco_orders'),
+    schema='dataco'
+    )
+    op.create_table('promo_exposure',
+    sa.Column('product_id', sa.BigInteger(), nullable=False),
+    sa.Column('store_id', sa.BigInteger(), nullable=False),
+    sa.Column('week_no', sa.BigInteger(), nullable=False),
+    sa.Column('display', sa.Text(), nullable=False),
+    sa.Column('mailer', sa.Text(), nullable=False),
+    sa.ForeignKeyConstraint(['product_id'], ['dunnhumby.products.product_id'], name='fk_dunnhumby_promo_exposure_product_id'),
+    sa.PrimaryKeyConstraint('product_id', 'store_id', 'week_no', 'display', 'mailer', name='pk_dunnhumby_promo_exposure'),
+    schema='dunnhumby'
+    )
+    op.create_table('transactions',
+    sa.Column('household_key', sa.BigInteger(), nullable=False),
+    sa.Column('basket_id', sa.BigInteger(), nullable=False),
+    sa.Column('day', sa.BigInteger(), nullable=True),
+    sa.Column('product_id', sa.BigInteger(), nullable=False),
+    sa.Column('quantity', sa.BigInteger(), nullable=True),
+    sa.Column('sales_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('store_id', sa.BigInteger(), nullable=True),
+    sa.Column('retail_disc', sa.Double(), nullable=True),
+    sa.Column('trans_time', sa.BigInteger(), nullable=True),
+    sa.Column('week_no', sa.BigInteger(), nullable=True),
+    sa.Column('coupon_disc', sa.Double(), nullable=True),
+    sa.Column('coupon_match_disc', sa.Double(), nullable=True),
+    sa.Column('total_discount', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('gross_sales_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('quantity_outlier', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['product_id'], ['dunnhumby.products.product_id'], name='fk_dunnhumby_transactions_product_id'),
+    sa.PrimaryKeyConstraint('household_key', 'basket_id', 'product_id', name='pk_dunnhumby_transactions'),
+    schema='dunnhumby'
+    )
+    op.create_table('sales_daily_total',
+    sa.Column('d_num', sa.BigInteger(), nullable=False),
+    sa.Column('total_units', sa.BigInteger(), nullable=True),
+    sa.Column('date', sa.DateTime(), nullable=True),
+    sa.Column('weekday', sa.Text(), nullable=True),
+    sa.Column('month', sa.BigInteger(), nullable=True),
+    sa.Column('year', sa.BigInteger(), nullable=True),
+    sa.ForeignKeyConstraint(['d_num'], ['m5.calendar.d_num'], name='fk_m5_sales_daily_total_d_num'),
+    sa.PrimaryKeyConstraint('d_num', name='pk_m5_sales_daily_total'),
+    schema='m5'
+    )
+    op.create_table('sales_long',
+    sa.Column('id', sa.Text(), nullable=False),
+    sa.Column('item_id', sa.Text(), nullable=True),
+    sa.Column('dept_id', sa.Text(), nullable=True),
+    sa.Column('cat_id', sa.Text(), nullable=True),
+    sa.Column('store_id', sa.Text(), nullable=True),
+    sa.Column('state_id', sa.Text(), nullable=True),
+    sa.Column('sales', sa.BigInteger(), nullable=True),
+    sa.Column('d_num', sa.BigInteger(), nullable=False),
+    sa.ForeignKeyConstraint(['d_num'], ['m5.calendar.d_num'], name='fk_m5_sales_long_d_num'),
+    sa.ForeignKeyConstraint(['id'], ['m5.series.id'], name='fk_m5_sales_long_id'),
+    sa.PrimaryKeyConstraint('id', 'd_num', name='pk_m5_sales_long'),
+    schema='m5'
+    )
+    op.create_table('closed_deals',
+    sa.Column('mql_id', sa.Text(), nullable=False),
+    sa.Column('seller_id', sa.Text(), nullable=True),
+    sa.Column('sdr_id', sa.Text(), nullable=True),
+    sa.Column('sr_id', sa.Text(), nullable=True),
+    sa.Column('won_date', sa.DateTime(), nullable=True),
+    sa.Column('business_segment', sa.Text(), nullable=True),
+    sa.Column('lead_type', sa.Text(), nullable=True),
+    sa.Column('lead_behaviour_profile', sa.Text(), nullable=True),
+    sa.Column('has_company', sa.Boolean(), nullable=True),
+    sa.Column('has_gtin', sa.Boolean(), nullable=True),
+    sa.Column('average_stock', sa.Text(), nullable=True),
+    sa.Column('business_type', sa.Text(), nullable=True),
+    sa.Column('declared_product_catalog_size', sa.Double(), nullable=True),
+    sa.Column('declared_monthly_revenue', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.ForeignKeyConstraint(['mql_id'], ['olist.mql.mql_id'], name='fk_olist_closed_deals_mql_id'),
+    sa.PrimaryKeyConstraint('mql_id', name='pk_olist_closed_deals'),
+    schema='olist'
+    )
+    op.create_table('orders',
+    sa.Column('order_id', sa.Text(), nullable=False),
+    sa.Column('customer_id', sa.Text(), nullable=True),
+    sa.Column('order_status', sa.Text(), nullable=True),
+    sa.Column('order_purchase_timestamp', sa.DateTime(), nullable=True),
+    sa.Column('order_approved_at', sa.DateTime(), nullable=True),
+    sa.Column('order_delivered_carrier_date', sa.DateTime(), nullable=True),
+    sa.Column('order_delivered_customer_date', sa.DateTime(), nullable=True),
+    sa.Column('order_estimated_delivery_date', sa.DateTime(), nullable=True),
+    sa.Column('purchase_date', sa.DateTime(), nullable=True),
+    sa.Column('delivered_to_customer_date', sa.DateTime(), nullable=True),
+    sa.Column('estimated_delivery_date', sa.DateTime(), nullable=True),
+    sa.Column('delivery_days', sa.Double(), nullable=True),
+    sa.Column('estimated_days', sa.Double(), nullable=True),
+    sa.Column('delay_days', sa.Double(), nullable=True),
+    sa.Column('is_late', sa.Boolean(), nullable=True),
+    sa.Column('is_delivered', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['customer_id'], ['olist.customers.customer_id'], name='fk_olist_orders_customer_id'),
+    sa.PrimaryKeyConstraint('order_id', name='pk_olist_orders'),
+    schema='olist'
+    )
+    op.create_table('order_items',
+    sa.Column('order_item_id', sa.BigInteger(), nullable=False),
+    sa.Column('order_id', sa.BigInteger(), nullable=True),
+    sa.Column('product_card_id', sa.BigInteger(), nullable=True),
+    sa.Column('order_item_quantity', sa.BigInteger(), nullable=True),
+    sa.Column('order_item_product_price', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_item_discount', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_item_discount_rate', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_item_profit_ratio', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_item_total', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('sales', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('order_profit_per_order', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('profit_margin', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('benefit_per_order', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('sales_per_customer', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.ForeignKeyConstraint(['order_id'], ['dataco.orders.order_id'], name='fk_dataco_order_items_order_id'),
+    sa.ForeignKeyConstraint(['product_card_id'], ['dataco.products.product_card_id'], name='fk_dataco_order_items_product_card_id'),
+    sa.PrimaryKeyConstraint('order_item_id', name='pk_dataco_order_items'),
+    schema='dataco'
+    )
+    op.create_table('order_items',
+    sa.Column('order_id', sa.Text(), nullable=False),
+    sa.Column('order_item_id', sa.BigInteger(), nullable=False),
+    sa.Column('product_id', sa.Text(), nullable=True),
+    sa.Column('seller_id', sa.Text(), nullable=True),
+    sa.Column('shipping_limit_date', sa.DateTime(), nullable=True),
+    sa.Column('price', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('freight_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('item_total', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.ForeignKeyConstraint(['order_id'], ['olist.orders.order_id'], name='fk_olist_order_items_order_id'),
+    sa.ForeignKeyConstraint(['product_id'], ['olist.products.product_id'], name='fk_olist_order_items_product_id'),
+    sa.ForeignKeyConstraint(['seller_id'], ['olist.sellers.seller_id'], name='fk_olist_order_items_seller_id'),
+    sa.PrimaryKeyConstraint('order_id', 'order_item_id', name='pk_olist_order_items'),
+    schema='olist'
+    )
+    op.create_table('order_payments_agg',
+    sa.Column('order_id', sa.Text(), nullable=False),
+    sa.Column('payment_total', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.Column('payment_count', sa.BigInteger(), nullable=True),
+    sa.Column('payment_installments_max', sa.BigInteger(), nullable=True),
+    sa.Column('payment_type_count', sa.BigInteger(), nullable=True),
+    sa.Column('primary_payment_type', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['order_id'], ['olist.orders.order_id'], name='fk_olist_order_payments_agg_order_id'),
+    sa.PrimaryKeyConstraint('order_id', name='pk_olist_order_payments_agg'),
+    schema='olist'
+    )
+    op.create_table('payments',
+    sa.Column('order_id', sa.Text(), nullable=False),
+    sa.Column('payment_sequential', sa.BigInteger(), nullable=False),
+    sa.Column('payment_type', sa.Text(), nullable=True),
+    sa.Column('payment_installments', sa.BigInteger(), nullable=True),
+    sa.Column('payment_value', sa.Numeric(precision=18, scale=4), nullable=True),
+    sa.ForeignKeyConstraint(['order_id'], ['olist.orders.order_id'], name='fk_olist_payments_order_id'),
+    sa.PrimaryKeyConstraint('order_id', 'payment_sequential', name='pk_olist_payments'),
+    schema='olist'
+    )
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    # Tables first: FKs prevent dropping a parent while a child still exists.
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('payments', schema='olist')
+    op.drop_table('order_payments_agg', schema='olist')
+    op.drop_table('order_items', schema='olist')
+    op.drop_table('order_items', schema='dataco')
+    op.drop_table('orders', schema='olist')
+    op.drop_table('closed_deals', schema='olist')
+    op.drop_table('sales_long', schema='m5')
+    op.drop_table('sales_daily_total', schema='m5')
+    op.drop_table('transactions', schema='dunnhumby')
+    op.drop_table('promo_exposure', schema='dunnhumby')
+    op.drop_table('orders', schema='dataco')
+    op.drop_table('sellers', schema='olist')
+    op.drop_table('reviews', schema='olist')
+    op.drop_table('products', schema='olist')
+    op.drop_table('mql', schema='olist')
+    op.drop_table('geolocation_by_zip', schema='olist')
+    op.drop_table('customers', schema='olist')
+    op.drop_table('customer_rfm', schema='olist')
+    op.drop_table('series', schema='m5')
+    op.drop_table('sell_prices', schema='m5')
+    op.drop_table('calendar', schema='m5')
+    op.drop_table('products', schema='dunnhumby')
+    op.drop_table('households', schema='dunnhumby')
+    op.drop_table('household_rfm', schema='dunnhumby')
+    op.drop_table('coupons', schema='dunnhumby')
+    op.drop_table('coupon_redemptions', schema='dunnhumby')
+    op.drop_table('campaigns', schema='dunnhumby')
+    op.drop_table('campaign_contacts', schema='dunnhumby')
+    op.drop_table('products', schema='dataco')
+    op.drop_table('customers', schema='dataco')
+    # ### end Alembic commands ###
+
+    # ADDED BY HAND, mirroring upgrade().
+    #
+    # The four source schemas are dropped unconditionally: this migration created
+    # every object in them, so removing them is removing exactly what upgrade()
+    # added.
+    op.execute("DROP SCHEMA IF EXISTS dunnhumby")
+    op.execute("DROP SCHEMA IF EXISTS dataco")
+    op.execute("DROP SCHEMA IF EXISTS olist")
+    op.execute("DROP SCHEMA IF EXISTS m5")
+    #
+    # `analytics` is different. This migration created it EMPTY; the curated
+    # cross-source layer that belongs there arrives in Phase 9 and will NOT be
+    # in any migration. A bare DROP SCHEMA would therefore delete real analytics
+    # data on a routine `alembic downgrade base`, so it is dropped only while
+    # still empty.
+    #
+    # It has to be a DO block: there is no `DROP SCHEMA IF EXISTS analytics AND
+    # <condition>` in SQL. An earlier version of this file tried exactly that
+    # and PostgreSQL read `analytics AND` as the schema name - a syntax error at
+    # the end of the whole migration. See test_downgrade_leaves_no_schemas_behind.
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'analytics'
+            ) THEN
+                EXECUTE 'DROP SCHEMA IF EXISTS analytics';
+            ELSE
+                RAISE NOTICE
+                    'leaving schema analytics in place: it now holds objects this migration did not create';
+            END IF;
+        END $$
+        """
+    )

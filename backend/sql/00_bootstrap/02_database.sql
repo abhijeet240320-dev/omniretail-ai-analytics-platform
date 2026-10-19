@@ -1,0 +1,31 @@
+-- =====================================================================
+-- 02_database.sql  -  create the omniretail database
+-- =====================================================================
+-- Run against the maintenance database ("postgres").
+--
+-- THIS FILE HOLDS EXACTLY ONE STATEMENT, ON PURPOSE
+-- -------------------------------------------------
+-- PostgreSQL treats a multi-statement simple query as a single implicit
+-- transaction, and CREATE DATABASE cannot run inside any transaction block.
+-- So a file containing "CREATE DATABASE ...; COMMENT ON DATABASE ...;"
+-- fails with:
+--
+--     ERROR: CREATE DATABASE cannot run inside a transaction block
+--
+-- even when the client is in autocommit mode, because the two statements
+-- arrive as one batch. The database COMMENT therefore lives in
+-- 03_schemas_and_grants.sql, which connects to omniretail and can annotate
+-- it from there. One statement per concern, one failure mode at a time.
+--
+-- IDEMPOTENCY
+-- -----------
+-- CREATE DATABASE cannot be made conditional in plain SQL. The existence
+-- check lives in backend/scripts/db/bootstrap_db.py, which queries
+-- pg_database and skips this step when omniretail is already present.
+--
+-- Ownership sits with the READ/WRITE application role, not the superuser.
+-- That is what makes "ALTER DEFAULT PRIVILEGES FOR ROLE omniretail" in the
+-- next script apply to tables the application creates later.
+-- =====================================================================
+
+CREATE DATABASE omniretail OWNER omniretail ENCODING 'UTF8';

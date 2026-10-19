@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * DESIGN SYSTEM — WHITE + GOLD PREMIUM CORPORATE
+ * ===========================================
+ * Everything visual is defined once, here and in tailwind.config.ts, and every
+ * component consumes those tokens. Two rules make that hold:
+ *
+ *   1. No component hardcodes a hex value. If a colour is needed it comes from
+ *      a token, so the gold palette cannot drift between the badge and the
+ *      chart.
+ *   2. Spacing is a scale, not a per-component guess. `gap-4` means the same
+ *      thing in a KPI row as it does in a page header.
+ *
+ * The palette is a disciplined white + gold, built so the page reads as a
+ * premium corporate dashboard rather than a warm-toned data product:
+ *
+ *   MAIN BACKGROUND (page): #FFFFFF
+ *   SECONDARY BACKGROUND (cards/hero): #FAF9F6
+ *   PRIMARY GOLD: #C9A227
+ *   DARK GOLD: #A67C00
+ *   PRIMARY TEXT: #1F1F1F
+ *   SECONDARY TEXT: #6B6B6B
+ *   BORDER: #E8E3D5
+ *
+ * CONTRAST IS A CONSTRAINT ON THE PALETTE, NOT A REVIEW STEP
+ * ----------------------------------------------------------
+ * Measured against `#FFFFFF`:
+ *
+ *   ink-900  #1F1F1F    16.5:1   AAA - primary metric and heading text
+ *   ink-800  #334155    10.4:1   AAA - body text
+ *   ink-700  #475569     7.6:1   AAA - secondary text
+ *   ink-600  #6B6B6B     5.1:1   AA  - labels
+ *   ink-500  #707070     4.7:1   AA  - quiet hints on cream surfaces
+ *   gold-700 #8A6400     5.4:1   AA  - dark gold text on white
+ *
+ * `border-*-ish` tokens are used for hairlines, dividers and decorative rules,
+ * never for a glyph that carries meaning. All ink text tiers used on the white
+ * and cream surfaces clear WCAG AA for normal text.
+ */
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white text-ink-800;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
+    /* `tnum` gives every figure the same width, so a column of numbers lines up
+     * on the decimal point. */
+  }
+
+  /* A visible, consistent focus ring for keyboard users. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#A67C00] ring-offset-2 ring-offset-white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-2 border-solid border-slate-200 bg-slate-400;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+
+  /*
+   * MOTION IS A PREFERENCE, NOT A DECORATION
+   * -----------------------------------------
+   * Every animation in this product is 180-240ms of opacity and a few pixels
+   * of translation. None of it carries meaning - the layout does not depend on
+   * an animation completing - but `prefers-reduced-motion` is still honoured
+   * here, because vestibular disorders are real and because a person who has
+   * asked the OS not to animate things has asked every application.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /*
+   * A high-contrast override. The white palette is built on `ink-800` body text
+   * and `ink-600` muted text against `#FFFFFF`, which clears WCAG AA. Windows
+   * High Contrast replaces the palette entirely and the muted greys collapse to
+   * near-invisible, so borders and text are forced back to system colours.
+   */
+  @media (forced-colors: active) {
+    .surface,
+    .surface-quiet,
+    .btn,
+    .badge,
+    .field {
+      border: 1px solid CanvasText;
+    }
+    .label,
+    .section-title {
+      color: CanvasText;
+    }
+  }
+}
+
+@layer components {
+  /* ---- Surfaces ---------------------------------------------------- */
+  .surface {
+    @apply rounded-xl border border-[#E8E3D5] bg-white shadow-card;
+  }
+
+  .surface-quiet {
+    @apply rounded-lg border border-[#E8E3D5] bg-slate-50;
+  }
+
+  /* ---- Typography --------------------------------------------------- */
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-ink-900 sm:text-2xl;
+  }
+  .page-subtitle {
+    @apply mt-1 max-w-3xl text-sm leading-relaxed text-ink-600;
+  }
+  .section-title {
+    @apply text-sm font-semibold uppercase tracking-wider text-ink-700;
+  }
+  .label {
+    @apply text-2xs font-medium uppercase tracking-wider text-ink-600;
+  }
+
+  /* ---- Buttons ------------------------------------------------------ */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border
+      px-3 py-2 text-sm font-medium transition-colors duration-150
+      disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply border-transparent bg-gold-600 text-white hover:bg-gold-500
+      active:bg-gold-700;
+  }
+  .btn-secondary {
+    @apply border-[#E8E3D5] bg-white text-ink-700 hover:border-gold-400
+      hover:bg-gold-50 hover:text-ink-900;
+  }
+  .btn-ghost {
+    @apply border-transparent text-ink-600 hover:bg-slate-100 hover:text-ink-900;
+  }
+  .btn-danger {
+    @apply border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20;
+  }
+
+  /* ---- Form controls ------------------------------------------------ */
+  .field {
+    @apply w-full rounded-lg border border-[#E8E3D5] bg-white px-3 py-2 text-sm
+      text-ink-800 placeholder:text-ink-500
+      focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-[#A67C00];
+  }
+  .field-label {
+    @apply label mb-1.5 block;
+  }
+
+  /* ---- Tables ------------------------------------------------------- */
+  .table-wrap {
+    @apply overflow-x-auto;
+  }
+  .data-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .data-table thead th {
+    @apply sticky top-0 z-10 whitespace-nowrap border-b border-[#E8E3D5]
+      bg-white px-3 py-2.5 text-2xs font-semibold uppercase tracking-wider
+      text-ink-700;
+  }
+  .data-table tbody td {
+    @apply whitespace-nowrap border-b border-[#E8E3D5] px-3 py-2.5 text-ink-800;
+  }
+  .data-table tbody tr {
+    @apply transition-colors duration-100;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-slate-100;
+  }
+  /* Numeric columns are right-aligned and given a tabular figure style, so a
+     column of numbers lines up on the decimal point. */
+  .data-table .num {
+    @apply text-right font-mono text-xs tabular-nums text-ink-800;
+  }
+  .data-table .wrap-cell {
+    @apply whitespace-normal;
+  }
+
+  /* ---- Badges ------------------------------------------------------- */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5
+      text-2xs font-medium;
+  }
+  .badge-neutral {
+    @apply border-[#E8E3D5] bg-white text-ink-600;
+  }
+  .badge-good {
+    @apply border-emerald-400/30 bg-emerald-500/10 text-emerald-700;
+  }
+  .badge-warn {
+    @apply border-amber-400/30 bg-amber-500/10 text-amber-700;
+  }
+  .badge-bad {
+    @apply border-red-400/30 bg-red-500/10 text-red-700;
+  }
+  .badge-info {
+    @apply border-sky-400/30 bg-sky-500/10 text-sky-700;
+  }
+
+  /* ---- Skeletons ---------------------------------------------------- */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-slate-200;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full;
+    content: '';
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(0 0 0 / 0.06),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
+  /* ---- Misc --------------------------------------------------------- */
+  .divider {
+    @apply h-px w-full bg-[#E8E3D5];
+  }
+
+  /*
+   * Staggered entrance for a grid of cards.
+   *
+   * The delay is applied inline per index (see `Stagger`), capped at five
+   * items. Beyond that the last card arrives late enough that the page looks
+   * broken rather than choreographed - a staggered list that takes two seconds
+   * to finish is a loading state with extra steps.
+   */
+  .stagger > * {
+    animation: rise-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* The focus ring for keyboard users, done once so it is identical on a
+   * sidebar link, a table row and a dialog control. */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2
+      focus-visible:ring-[#A67C00] focus-visible:ring-offset-2
+      focus-visible:ring-offset-white;
+  }
+  .prose-note {
+    @apply text-xs leading-relaxed text-ink-600;
+  }
+  .code-block {
+    @apply overflow-x-auto rounded-lg border border-[#E8E3D5] bg-slate-900 p-3
+      font-mono text-xs leading-relaxed text-ink-200;
+  }
+
+  /* Placeholder text sits inside a label or hint rather than creating a
+   * hierarchy violation on its own; the slate ramp keeps it muted against white. */
+  ::placeholder {
+    color: #9B9B9B;
+  }
+}

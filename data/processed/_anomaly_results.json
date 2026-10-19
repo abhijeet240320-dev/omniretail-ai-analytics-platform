@@ -1,0 +1,801 @@
+{
+  "generated_utc": "2026-10-03T19:42:05.305667+00:00",
+  "method_note": "Every anomaly carries its own baseline and threshold. No point is reported without them, because a bare 'anomaly: true' cannot be judged by a reader.",
+  "detections": [
+    {
+      "source": "olist",
+      "metric": "orders_per_day",
+      "method": "same-weekday rolling mean, 28-week lookback, flag |z| >= 3.0",
+      "baseline": "mean of the previous 28 same-weekday order counts; threshold = +/- 3.0 standard deviations of those",
+      "points_evaluated": 606,
+      "anomalies_found": 32,
+      "firing_rate_pct": 5.2805,
+      "false_positive_caveat": "No labelled ground truth exists for this dataset, so a firing point is 'unusual relative to its own history', not 'wrong'. Business events (holidays, promotions, outages) also look anomalous.",
+      "anomalies": [
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-24",
+          "observed": 1176.0,
+          "baseline": 131.1429,
+          "threshold": 71.9338,
+          "score_sigma": 43.58,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-25",
+          "observed": 499.0,
+          "baseline": 100.0357,
+          "threshold": 65.1638,
+          "score_sigma": 18.37,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-26",
+          "observed": 391.0,
+          "baseline": 120.7857,
+          "threshold": 62.6597,
+          "score_sigma": 12.94,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-27",
+          "observed": 403.0,
+          "baseline": 159.6786,
+          "threshold": 89.7554,
+          "score_sigma": 8.13,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-28",
+          "observed": 380.0,
+          "baseline": 159.9643,
+          "threshold": 95.9496,
+          "score_sigma": 6.88,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-29",
+          "observed": 323.0,
+          "baseline": 148.2143,
+          "threshold": 99.6138,
+          "score_sigma": 5.26,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-23",
+          "observed": 283.0,
+          "baseline": 140.3214,
+          "threshold": 84.6918,
+          "score_sigma": 5.05,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-29",
+          "observed": 1.0,
+          "baseline": 166.0,
+          "threshold": 115.3632,
+          "score_sigma": -4.29,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-30",
+          "observed": 4.0,
+          "baseline": 240.1429,
+          "threshold": 168.7063,
+          "score_sigma": -4.2,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-31",
+          "observed": 1.0,
+          "baseline": 207.6429,
+          "threshold": 151.0104,
+          "score_sigma": -4.11,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-02-05",
+          "observed": 75.0,
+          "baseline": 16.2857,
+          "threshold": 43.1178,
+          "score_sigma": 4.09,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-29",
+          "observed": 14.0,
+          "baseline": 256.4286,
+          "threshold": 179.0985,
+          "score_sigma": -4.06,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-11",
+          "observed": 159.0,
+          "baseline": 95.5714,
+          "threshold": 48.5279,
+          "score_sigma": 3.92,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-16",
+          "observed": 226.0,
+          "baseline": 136.1429,
+          "threshold": 69.9272,
+          "score_sigma": 3.86,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-03",
+          "observed": 4.0,
+          "baseline": 258.2143,
+          "threshold": 199.9222,
+          "score_sigma": -3.81,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-28",
+          "observed": 44.0,
+          "baseline": 254.8571,
+          "threshold": 166.0958,
+          "score_sigma": -3.81,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-11",
+          "observed": 1.0,
+          "baseline": 248.4286,
+          "threshold": 204.2179,
+          "score_sigma": -3.63,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-27",
+          "observed": 67.0,
+          "baseline": 263.6071,
+          "threshold": 167.478,
+          "score_sigma": -3.52,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-17",
+          "observed": 197.0,
+          "baseline": 128.0714,
+          "threshold": 61.4488,
+          "score_sigma": 3.37,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-26",
+          "observed": 73.0,
+          "baseline": 192.3571,
+          "threshold": 106.9243,
+          "score_sigma": -3.35,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-12",
+          "observed": 1.0,
+          "baseline": 246.3929,
+          "threshold": 224.1225,
+          "score_sigma": -3.28,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-06",
+          "observed": 3.0,
+          "baseline": 230.1786,
+          "threshold": 213.3324,
+          "score_sigma": -3.19,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-01-26",
+          "observed": 86.0,
+          "baseline": 25.2,
+          "threshold": 57.3306,
+          "score_sigma": 3.18,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-05-24",
+          "observed": 114.0,
+          "baseline": 244.1429,
+          "threshold": 122.8243,
+          "score_sigma": -3.18,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-30",
+          "observed": 267.0,
+          "baseline": 145.9286,
+          "threshold": 116.6045,
+          "score_sigma": 3.11,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-11-12",
+          "observed": 174.0,
+          "baseline": 115.3214,
+          "threshold": 56.5924,
+          "score_sigma": 3.11,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-12-04",
+          "observed": 337.0,
+          "baseline": 168.4643,
+          "threshold": 164.5245,
+          "score_sigma": 3.07,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-02-04",
+          "observed": 67.0,
+          "baseline": 19.6667,
+          "threshold": 46.5016,
+          "score_sigma": 3.05,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-02-06",
+          "observed": 85.0,
+          "baseline": 23.4286,
+          "threshold": 60.7418,
+          "score_sigma": 3.04,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-09-10",
+          "observed": 1.0,
+          "baseline": 249.1071,
+          "threshold": 246.4472,
+          "score_sigma": -3.02,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2018-08-25",
+          "observed": 69.0,
+          "baseline": 169.9286,
+          "threshold": 100.4222,
+          "score_sigma": -3.02,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "olist",
+          "metric": "orders_per_day",
+          "date": "2017-05-21",
+          "observed": 148.0,
+          "baseline": 52.8636,
+          "threshold": 94.969,
+          "score_sigma": 3.01,
+          "direction": "above",
+          "severity": "warning"
+        }
+      ],
+      "notes": [
+        "skipped the first 4 occurrences of each weekday (insufficient history); scored 606 day/weekday pairs"
+      ]
+    },
+    {
+      "source": "dunnhumby",
+      "metric": "basket_lines_per_day",
+      "method": "rolling median with MAD, 30-day window, flag |robust z| >= 3.0",
+      "baseline": "median of the previous 30 days; scale = 1.4826 x MAD; threshold = +/- 3.0 x that scale",
+      "points_evaluated": 704,
+      "anomalies_found": 26,
+      "firing_rate_pct": 3.6932,
+      "false_positive_caveat": "No labelled ground truth exists for this dataset, so a firing point is 'unusual relative to its own history', not 'wrong'. Business events (holidays, promotions, outages) also look anomalous.",
+      "anomalies": [
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "643",
+          "observed": 2.0,
+          "baseline": 3897.5,
+          "threshold": 1552.2822,
+          "score_sigma": -7.53,
+          "direction": "below",
+          "severity": "critical"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "641",
+          "observed": 7066.0,
+          "baseline": 3823.0,
+          "threshold": 1363.2507,
+          "score_sigma": 7.14,
+          "direction": "above",
+          "severity": "critical"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "278",
+          "observed": 6.0,
+          "baseline": 3880.5,
+          "threshold": 2410.7076,
+          "score_sigma": -4.82,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "684",
+          "observed": 6681.0,
+          "baseline": 3976.0,
+          "threshold": 2141.6157,
+          "score_sigma": 3.79,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "610",
+          "observed": 6352.0,
+          "baseline": 3879.0,
+          "threshold": 1977.0471,
+          "score_sigma": 3.75,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "691",
+          "observed": 7426.0,
+          "baseline": 4039.0,
+          "threshold": 2735.397,
+          "score_sigma": 3.71,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "96",
+          "observed": 4039.0,
+          "baseline": 2520.5,
+          "threshold": 1232.0406,
+          "score_sigma": 3.7,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "246",
+          "observed": 6746.0,
+          "baseline": 3652.5,
+          "threshold": 2544.1416,
+          "score_sigma": 3.65,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "67",
+          "observed": 2629.0,
+          "baseline": 1496.5,
+          "threshold": 931.8141,
+          "score_sigma": 3.65,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "425",
+          "observed": 5531.0,
+          "baseline": 3926.0,
+          "threshold": 1325.4444,
+          "score_sigma": 3.63,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "69",
+          "observed": 2648.0,
+          "baseline": 1504.5,
+          "threshold": 967.3965,
+          "score_sigma": 3.55,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "103",
+          "observed": 4653.0,
+          "baseline": 2750.0,
+          "threshold": 1632.3426,
+          "score_sigma": 3.5,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "39",
+          "observed": 1703.0,
+          "baseline": 811.5,
+          "threshold": 776.1411,
+          "score_sigma": 3.45,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "640",
+          "observed": 5355.0,
+          "baseline": 3823.0,
+          "threshold": 1363.2507,
+          "score_sigma": 3.37,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "276",
+          "observed": 6715.0,
+          "baseline": 3760.5,
+          "threshold": 2637.5454,
+          "score_sigma": 3.36,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "683",
+          "observed": 5475.0,
+          "baseline": 3903.0,
+          "threshold": 1414.4004,
+          "score_sigma": 3.33,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "692",
+          "observed": 7493.0,
+          "baseline": 4090.5,
+          "threshold": 3071.2059,
+          "score_sigma": 3.32,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "75",
+          "observed": 3167.0,
+          "baseline": 1642.5,
+          "threshold": 1378.818,
+          "score_sigma": 3.32,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "669",
+          "observed": 6260.0,
+          "baseline": 3893.0,
+          "threshold": 2154.9591,
+          "score_sigma": 3.3,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "439",
+          "observed": 5585.0,
+          "baseline": 3997.0,
+          "threshold": 1458.8784,
+          "score_sigma": 3.27,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "95",
+          "observed": 3817.0,
+          "baseline": 2457.5,
+          "threshold": 1280.9664,
+          "score_sigma": 3.18,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "201",
+          "observed": 5294.0,
+          "baseline": 3537.0,
+          "threshold": 1703.5074,
+          "score_sigma": 3.09,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "74",
+          "observed": 2763.0,
+          "baseline": 1570.5,
+          "threshold": 1160.8758,
+          "score_sigma": 3.08,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "11",
+          "observed": 814.0,
+          "baseline": 398.0,
+          "threshold": 406.9737,
+          "score_sigma": 3.07,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "446",
+          "observed": 5440.0,
+          "baseline": 3949.0,
+          "threshold": 1458.8784,
+          "score_sigma": 3.07,
+          "direction": "above",
+          "severity": "warning"
+        },
+        {
+          "source": "dunnhumby",
+          "metric": "basket_lines_per_day",
+          "date": "68",
+          "observed": 2462.0,
+          "baseline": 1502.5,
+          "threshold": 958.5009,
+          "score_sigma": 3.0,
+          "direction": "above",
+          "severity": "warning"
+        }
+      ],
+      "notes": [
+        "dunnhumby's time axis is the integer `day` index (1..711), not a calendar date. Labels are day_N and MUST NOT be read as dates.",
+        "scored 704 of 711 days; the first 6 have no usable history"
+      ]
+    },
+    {
+      "source": "m5",
+      "metric": "total_units_per_day",
+      "method": "rolling mean and standard deviation, 56-day lookback, flag |z| >= 4.0",
+      "baseline": "mean of the previous 56 days; threshold = +/- 4.0 standard deviations",
+      "points_evaluated": 1913,
+      "anomalies_found": 5,
+      "firing_rate_pct": 0.2614,
+      "false_positive_caveat": "No labelled ground truth exists for this dataset, so a firing point is 'unusual relative to its own history', not 'wrong'. Business events (holidays, promotions, outages) also look anomalous.",
+      "anomalies": [
+        {
+          "source": "m5",
+          "metric": "total_units_per_day",
+          "date": "2015-12-25",
+          "observed": 14.0,
+          "baseline": 37690.3036,
+          "threshold": 22769.7362,
+          "score_sigma": -6.62,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "m5",
+          "metric": "total_units_per_day",
+          "date": "2011-12-25",
+          "observed": 13.0,
+          "baseline": 28491.1071,
+          "threshold": 17924.1751,
+          "score_sigma": -6.36,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "m5",
+          "metric": "total_units_per_day",
+          "date": "2014-12-25",
+          "observed": 20.0,
+          "baseline": 34595.375,
+          "threshold": 22509.2362,
+          "score_sigma": -6.14,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "m5",
+          "metric": "total_units_per_day",
+          "date": "2013-12-25",
+          "observed": 20.0,
+          "baseline": 34891.8929,
+          "threshold": 23068.7245,
+          "score_sigma": -6.05,
+          "direction": "below",
+          "severity": "warning"
+        },
+        {
+          "source": "m5",
+          "metric": "total_units_per_day",
+          "date": "2012-12-25",
+          "observed": 11.0,
+          "baseline": 32949.2321,
+          "threshold": 23399.3861,
+          "score_sigma": -5.63,
+          "direction": "below",
+          "severity": "warning"
+        }
+      ],
+      "notes": [
+        "aggregated across all 30,490 series before detection, so a flagged day means the whole business moved, not one volatile item",
+        "threshold is 4.0 rather than 3.0 because aggregate retail units have heavier tails than normal; a 3-sigma cut fires almost entirely on December, which is real and expected",
+        "5 of 5 flagged m5 dates are known calendar events recorded in the dataset itself (Christmas Day); 0 are not explained by the calendar"
+      ]
+    }
+  ],
+  "known_events": [
+    {
+      "date": "2011-11-24",
+      "name": "Black Friday"
+    },
+    {
+      "date": "2011-12-24",
+      "name": "Christmas Eve"
+    },
+    {
+      "date": "2011-12-25",
+      "name": "Christmas Day"
+    },
+    {
+      "date": "2011-12-31",
+      "name": "New Year's Eve"
+    },
+    {
+      "date": "2012-11-23",
+      "name": "Black Friday"
+    },
+    {
+      "date": "2012-12-25",
+      "name": "Christmas Day"
+    },
+    {
+      "date": "2013-11-29",
+      "name": "Black Friday"
+    },
+    {
+      "date": "2013-12-25",
+      "name": "Christmas Day"
+    },
+    {
+      "date": "2014-11-28",
+      "name": "Black Friday"
+    },
+    {
+      "date": "2014-12-25",
+      "name": "Christmas Day"
+    },
+    {
+      "date": "2015-11-27",
+      "name": "Black Friday"
+    },
+    {
+      "date": "2015-12-25",
+      "name": "Christmas Day"
+    },
+    {
+      "date": "2016-01-01",
+      "name": "New Year's Day"
+    }
+  ]
+}

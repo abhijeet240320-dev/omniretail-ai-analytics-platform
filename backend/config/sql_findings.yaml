@@ -1,0 +1,489 @@
+# What the four sources actually say.
+#
+# Keyed by "<source>.<query_name>". This file holds INTERPRETATION ONLY - every
+# number quoted here is checked by backend/scripts/docs/generate_sql_analytics.py
+# against the result rows of that specific query, and the documentation is
+# refused if a quoted figure is not in the data. If you need a number that no
+# query returns, add the query first; do not type the number here.
+#
+# Put identifiers, table names and schema names inside `backticks` - digits
+# inside a code span are treated as part of an identifier, not as a measurement.
+
+olist.monthly_revenue_trend: |
+  Olist is a growth story that runs into a wall, not one that runs off the end of
+  the data. Orders climb from 800 in 2017-01 to a peak of 7,544 in 2017-11,
+  settle into a plateau across 2018, and then fall off a cliff: 15 orders in
+  2018-09 and 4 in 2018-10. The dataset ends because the marketplace effectively
+  stopped taking orders.
+
+  Note that orders now exceed customers in every month (800 orders from 765
+  customers in 2017-01, for instance). That gap is repeat purchasing, and it is
+  the subject of the next query.
+
+olist.customer_repeat_behaviour: |
+  This is the finding that changes what an Olist dashboard should even measure.
+  99,441 orders belong to 96,096 distinct people, so 1.035 orders per person. But
+  93,099 of those people - 96.88% - bought exactly once and never again, and only
+  2,997 people (3.12%) ever returned. The most orders placed by any single person
+  is 17.
+
+  A marketplace in which almost nobody buys twice is a fulfilment operation with
+  a marketplace attached. Retention, cohort lifetime value and frequency metrics
+  are all built on the assumption that a customer can come back; here they would
+  be measuring the 3.12% who did, and the honest headline is order economics,
+  not customer value.
+
+olist.review_id_forensics: |
+  Every repeated `review_id` is one customer and one review - or, more precisely,
+  the dataset repeating a single review across several of that customer's
+  orders.
+
+  All 789 duplicated ids belong to exactly one person, carry an identical score,
+  identical title and message, and identical BOTH `review_creation_date` and
+  `review_answer_timestamp`. 764 of them appear twice and 25 appear three times,
+  producing 1,603 order links.
+
+  The timestamps settle it. A customer who genuinely re-submitted a review would
+  create a second event, and that event would carry its own creation date. There
+  is no second timestamp anywhere in any group, so there was only ever one review.
+
+  The chronology is the clincher. 32 of the 789 reviews name an order whose
+  `purchase_date` falls AFTER the review was written - 40 of the 1,603 links. A
+  customer cannot review an order they had not yet placed, so those associations
+  were manufactured rather than reported. One concrete case: a review titled
+  "Produto errado", carrying the lowest score on the `review_score` scale, is
+  attached to three orders by one customer - the first delivered before the review
+  was written, the other two placed after it.
+
+  Verdict: this is a one-to-many fan-out in how Olist assembled the dataset, not
+  customer behaviour and not corruption in transit. The honest grain is one row
+  per (review, order) association, which is what the schema now declares.
+
+olist.review_grain_candidates: |
+  Three candidate grains, tested side by side rather than asserted:
+
+  | candidate key | surplus rows | NULL rows |
+  |---|---|---|
+  | `review_id` alone | 814 | 0 |
+  | `review_id` + `order_id` | 0 | 0 |
+  | `order_id` + `review_creation_date` | 157 | 0 |
+
+  Only the middle one holds, and it holds exactly. `order_id` with the creation
+  date still leaves 157 surplus rows, because one order can legitimately carry
+  more than one distinct review - which is a real event, not an artefact.
+
+  This is why `olist.reviews` now has a primary key rather than none. The earlier
+  rejection of `review_id` was our own wrong guess about the grain, not a
+  property of the data, so the fix was to measure the real grain rather than to
+  leave a keyless table behind.
+
+olist.order_status_funnel: |
+  Almost everything reaches a terminal state: 96,478 of the orders are
+  `delivered` (97.02%) and 15,422,461.77 of the payment value sits behind them
+  (96.34%). The statuses people worry about - `canceled` at 625 orders and
+  `unavailable` at 609 - are small in count but they are not small in money:
+  143,255.60 and 126,479.51 respectively were attempted against orders that never
+  completed. `invoiced` (314) and `processing` (301) are the real "in flight"
+  population, and a handful of orders are stuck at `created` (5) or `approved`
+  (2).
+
+olist.delivery_performance: |
+  Olist beats its own delivery promise almost every time, and by a wide margin.
+  88,644 of the 96,478 delivered orders (91.88%) arrived on or before the
+  estimate. The average delivery took 12.56 days against a promise of 23.74 days.
+
+  The honest reading is that the estimate is not a forecast, it is a ceiling. An
+  on-time rate of 91.88% against a promise nearly twice the actual delivery time
+  tells you very little about logistics performance: average `delay_days` comes
+  out at -11.18, negative because the typical order arrives ahead of its promise.
+  The single worst order was 189 days past its estimate, and that is the number
+  the operations team should be looking at.
+
+olist.delay_distribution: |
+  The average hides the tail that generates complaints. 1,292 delivered orders
+  (1.34%) were up to a day late, but 1,790 (1.86%) fall in the `8-14 days late`
+  band and 1,555 (1.61%) in `more than 14 days late`. The late tail is
+  bimodal - either you make the promise comfortably or you miss it by a long way
+  - and there is almost nothing in between.
+
+olist.review_coverage_and_score: |
+  Coverage first, score second, in that order. 98,673 of 99,441 orders carry a
+  review - 99.23%, with only 768 orders unreviewed. That is far higher than
+  review coverage usually is in a marketplace, and it is the precondition for
+  trusting any score at all: an average of 4.09 across almost every order is a
+  claim about the business, whereas an average over a small self-selected
+  minority would be a claim about the reviewers.
+
+  This query also surfaces the rejected primary key. There are 99,224 review rows
+  but only 98,410 distinct review_ids, so some rows reuse an id. That is recorded
+  as a data limitation rather than fixed, because the loader is not allowed to
+  delete real rows to satisfy a key.
+
+olist.review_score_distribution: |
+  The distribution is heavily top-weighted: 57,328 five-star reviews (57.78%)
+  against 11,424 one-star reviews (11.51%).
+
+  The more useful signal is the comment column, and it runs opposite to the
+  score. 76.55% of one-star reviewers left a comment, compared with 31.22% of
+  four-star reviewers, and the average one-star comment runs to 100 characters
+  against 52 for a five-star. Dissatisfaction is expressed; satisfaction is
+  silent. Any sentiment model trained on review TEXT will therefore be trained
+  overwhelmingly on the minority of unhappy customers, which is a sampling
+  problem in the data and not something the model can fix.
+
+olist.seller_concentration: |
+  The marketplace is extremely long-tailed. The top 100 sellers are 3.23% of the
+  3,095 sellers and take 44.37% of gross merchandise value. The top 1,000 (32.31%
+  of sellers) take 91.06%, leaving the remaining sellers to share the rest.
+
+  Two consequences follow. Any seller-level forecast or recommendation has to
+  handle a power law, not a normal distribution. And marketplace-wide averages
+  describe a minority of the supply base: the top seller alone carries 249,640.70
+  across 1,132 orders, more than three times what a median seller will ever see.
+
+olist.geography_revenue_concentration: |
+  Demand is concentrated in the south-east. `SP` alone takes 5,998,226.96 -
+  37.47% of all payment value - from 41,745 orders, with `RJ` on 13.39% and `MG`
+  on 11.70%.
+
+  This matters for a logistics question more than a marketing one: nearly two in
+  every five reais is delivered into one state, so any change to carrier
+  performance or delivery cost there moves the whole business, while a national
+  average hides it.
+
+olist.payment_behaviour: |
+  Credit cards carry 78.34% of all payment value (12,542,084.19) and boleto, the
+  Brazilian bank-slip method, carries 17.92%. The interesting number is inside
+  the card column: 51,338 card payments (66.85% of card rows) are on more than
+  one instalment, and those instalment payments carry 10,101,450.13 - 80.54% of
+  all card value. Up to 24 instalments are used.
+
+  So "credit card" is really two products: a small number of large instalment
+  plans and a large number of small single payments. Boleto, voucher and debit
+  card are always a single payment, so the instalment feature belongs to one
+  payment method only.
+
+olist.multi_payment_orders: |
+  Most orders are settled cleanly: 96,479 of them (97.02%) are closed by exactly
+  one payment. But 2,382 orders need two payments, and the tail is long - one
+  order was settled by 29 separate payments.
+
+  This is the mechanical reason the aggregate payment table has fewer rows than
+  the raw one, and it is why revenue must be summed from the aggregate rather
+  than from the payment table. Counting payment rows would double-count every
+  order that was settled in instalments.
+
+dataco.order_flow_by_month: |
+  The order count rises over the window, from 1,787 orders in 2015-01 to 2,055 in
+  2017-11, but sales fall from 1,051,590.06 to 626,914.37. The reconciliation is
+  basket size: average units per order collapse from 6.63 to 1.00.
+
+  By the end of the dataset every order contains exactly one unit. Whatever
+  DataCo was doing early on - bulk or multi-line orders - has stopped, and any
+  per-order metric that mixes the two periods is comparing two different
+  businesses.
+
+dataco.order_status_mix: |
+  Late delivery is the default state rather than the exception: 12,521 orders
+  (19.04%) are `COMPLETE` and late, against 5,174 (7.87%) shipped in advance and
+  4,021 (6.12%) shipped on time.
+
+  The suspicious column is margin. Every status shows a margin in the same narrow
+  range - including `SUSPECTED_FRAUD` orders at 10.31% and `CANCELED` orders at
+  10.12%, against 10.70% for the large `COMPLETE` late group. Real cancelled and
+  suspected-fraud orders should not carry the same profitability as fulfilled
+  ones, so `order_profit` in this dataset is close to a fixed percentage of sales
+  rather than a measured outcome. Treat it as a derived column, not as evidence.
+
+dataco.shipping_performance: |
+  Read the late rate backwards. `First Class` is "late" on 95.27% of orders, but
+  the average delay is exactly 1.00 day, because the promise was 1.00 day.
+  `Second Class` is late 76.72% of the time with an average 2.00-day delay against
+  a 2.00-day promise. `Standard Class` is late only 38.13% of the time and its
+  average delay is 0.00 days.
+
+  So the metric tracks how tight the promise is, not whether the operation
+  failed. Nobody should build a carrier scorecard on `is_late` without also
+  looking at the magnitude of the delay.
+
+dataco.margin_by_department: |
+  Margins are thin but not negative, and remarkably tight together: they run from
+  7.02% in Book Shop to 11.72% in Fitness, with the volume leader `Fan Shop` at
+  10.72% on 17,113,870.54 of sales.
+
+  The striking column is the discount rate, which sits inside a band of just over
+  a tenth of a percent in every single department - from 10.05% to 10.20%. A real
+  retailer does not discount eleven departments to within that margin of each
+  other. This is a characteristic of how the dataset was built, and it means
+  department-level discounting analysis has nothing to find here.
+
+dataco.worst_categories_by_margin: |
+  The bottom of the margin table is where the money is being lost.
+  `Strength Training` sells 54,895.53 and keeps 0.61% - 18 of its order lines
+  lose money outright. `As Seen on  TV!` is at 3.47% and `Men's Clothing` at
+  4.57%.
+
+  Volume matters too: `Shop By Sport` has 10,984 order lines and loses money on
+  2,154 of them at a 9.91% margin, and `Video Games` loses on 181 lines. A category
+  ranking by revenue would show none of this.
+
+dataco.discount_vs_margin: |
+  Discounting costs margin, monotonically and almost linearly. Lines with no
+  discount return 13.09%. The `1-14% off` band returns 11.22%, `15-19% off`
+  returns 9.88%, and the deepest band present, `20-29% off`, returns 9.03%.
+
+  The final two buckets of the query - `30-49% off` and `50%+ off` - are empty.
+  That matters: this data can tell you the cost of discounting down to the
+  deepest band it actually contains, and can say nothing at all about what
+  happens past it. An extrapolation beyond the observed range would be invention.
+
+dataco.customer_segments: |
+  The three segments are almost interchangeable. Margin runs 10.86% (Consumer),
+  10.77% (Corporate) and 10.59% (Home Office); sales per customer run 1,785.49,
+  1,790.10 and 1,753.78. Consumer is the largest at 34,119 orders, but it is not
+  more profitable per unit of business, and Corporate is not worth a different
+  operating model.
+
+dataco.revenue_by_market: |
+  Europe is the largest market at 29.56% of sales, followed by LATAM at 27.94%
+  and Pacific Asia at 22.49%, with USCA at 13.77% and Africa at 6.24%.
+
+  The operational columns are flat to a degree that should be suspicious: the
+  late rate is between 54.13% and 55.30% in all five markets and average delay
+  between 0.55 and 0.58 days. Geography has no measurable effect on delivery
+  performance in this dataset, which means either the effect is genuinely
+  negligible or the shipping fields were assigned independently of the market.
+  Either way it is not a finding about the business.
+
+dataco.loss_making_orders: |
+  78.85% of orders (51,844) are profitable or break even, but the three loss
+  bands are not trivial: 6,628 orders sit in `small loss (0 to -100)`, 6,069 in
+  `moderate loss (-100 to -500)` and 1,211 in `large loss (below -500)`. The
+  single worst order lost -4,325.85.
+
+  Roughly one order in five loses money, which disappears entirely inside a
+  blended margin and is exactly the kind of thing an operations review should be
+  able to list.
+
+dunnhumby.household_activity_over_time: |
+  The panel ramps rather than seasons. Week 1 has 88 households shopping across
+  142 baskets; by week 50 that is 1,332 households. Gross sales rise with it,
+  from 6,267.90 in the first week.
+
+  Read this as panel onboarding, not demand growth. The first weeks of a retail
+  panel are always a recruitment artifact, and a trend chart drawn from week 1
+  would report spectacular growth that is really just households being enrolled.
+
+dunnhumby.household_participation_rate: |
+  All 2,500 households in the panel shop at least once, and the average household
+  makes 110.59 transactions with an average total spend of 3,222.99 across 90.21
+  active days. The range is enormous: from 1 transaction to 1,300.
+
+  The last two columns matter more than the first. Households that have
+  demographic records average 175.20 transactions, while those without average
+  80.13 - more than twice as active. Any analysis that restricts to the
+  described households is not a random sample, it is the most active part of the
+  panel.
+
+dunnhumby.demographic_coverage_gap: |
+  This is the most important fact about the dunnhumby source, and it constrains
+  everything else.
+
+  `transaction_data.csv` names 2,500 distinct households. `hh_demographic.csv`
+  names only 801 of them - 32.04%. 1,699 transacting households have no
+  demographic record at all.
+
+  The file is byte-identical (checksum and all) to the copy inside the publisher's
+  own zip archive, so this is the publisher's coverage and not a truncated
+  download. It also explains why no foreign key runs from `transactions` to
+  `households`: one genuinely does not hold.
+
+  Any demographic split of this panel is therefore a split of under a third of
+  the households, and the documented conclusion has to say so.
+
+dunnhumby.sales_mix_by_department: |
+  Grocery is half the business: 1,646,076 basket lines and 50.81% of net sales
+  from 39,019 products. `DRUG GM` follows on 13.10%.
+
+  Discount intensity varies far more than volume does. `MEAT` gives away
+  24.36% of gross and `MEAT-PCKGD` 22.67%, against 17.14% for grocery and 3.07%
+  for `KIOSK-GAS`. Perishable departments are being promoted harder, which is the
+  only real signal in this table.
+
+  Two rows need care. `KIOSK-GAS` shows 221,254,887 units against 544,222.28 of
+  net sales, because fuel quantity is recorded in a different unit to everything
+  else - averaging units across departments mixes incompatible measures. And the
+  final row, with no department name, carries 10,306.04 of gross fully discounted
+  to zero net: real rows exist where the department label is missing and the
+  entire value was given away.
+
+dunnhumby.discount_composition: |
+  Half the panel, 1,282,977 basket lines, carries a retailer discount and nothing
+  else, at an effective 25.55% of gross. Manufacturer coupons are far rarer:
+  16,373 coupon-only lines at 31.83%, and 20,049 lines carrying both at 43.48%.
+
+  Who pays differs sharply. Where a coupon is involved the manufacturer funds
+  88.72% of it, but where both apply the manufacturer covers only 36.12%.
+
+  The `no discount at all` bucket still shows 8.53 of discount against
+  1,276,333 lines. That is not a bucketing bug: a handful of lines carry a
+  POSITIVE `retail_disc` in the raw source, which is why the funding columns take
+  an absolute value. It is a reminder that this source stores signs two different
+  ways and that the discount columns must not be trusted without checking.
+
+dunnhumby.campaign_performance: |
+  Contacted households average 5,176.36 in spend against 1,028.54 for households
+  never contacted by any campaign - a gap of 4,147.82 on the largest campaign.
+
+  That gap is selection, not effect. Campaigns were aimed at the panel's heaviest
+  shoppers, so comparing contacted households against anyone else measures who
+  was targeted. An earlier draft of this query compared against the panel average
+  and reported an enormous "lift", which was simply the targeting rule restated.
+  Nothing here identifies a causal campaign effect; that would need a holdout
+  group this panel does not contain.
+
+dunnhumby.coupon_redemption: |
+  1,135 distinct coupons were issued across 119,384 product/campaign rows, and
+  556 of them were ever redeemed - 48.99%. Those redemptions come to 2,318 rows
+  across 2,229 households.
+
+  Just under half of all coupons ever got used. The interesting ratio is not
+  redemption rate but reach: a coupon is attached to many products and campaigns,
+  so "did this coupon work" cannot be answered per coupon without also asking
+  which of those product/campaign rows it was redeemed against.
+
+dunnhumby.promo_exposure_coverage: |
+  Display codes are categorical, not numeric - the values here include `0`, `A`
+  and the digits `1` to `9`, which is why they are counted rather than summed.
+  Summing this column fails outright with "function sum(text) does not exist".
+
+  `0` means no display and covers 21,038,745 product-store-weeks, 57.19% of the
+  grid. Display exposure of some kind covers the rest, spread thinly across codes
+  `9` (7.34%), `5` (7.00%), `7` (6.42%), `3` (5.64%) and the remainder. No single
+  display code reaches even a tenth of the grid.
+
+dunnhumby.exposure_grid_density: |
+  The exposure table is a dense 36,786,524-row product x store x week grid, but
+  36,302,589 of those rows - 98.68% - correspond to no sale at all. Only 483,935
+  match a transaction in the same product, store and week.
+
+  This is the single most important caveat on any promotion analysis of this
+  source. The grid is a catalogue of what COULD have been promoted, not a record
+  of what was, and averaging across it compares 98.68% zeros against 98.68%
+  zeros.
+
+dunnhumby.exposure_vs_sales: |
+  Restricted to the product-store-weeks that actually sold something, being on
+  display has no positive association with volume at all: 237,052 on-display
+  weeks average 1.61 units, while 246,883 off-display weeks average 1.68 units.
+  Promoted weeks sold slightly LESS.
+
+  That is not evidence that promotion suppresses sales. Retailers put products on
+  display when they already expect them to sell, and the observation here cannot
+  separate the two. It is enough to say that the display flag on its own does not
+  predict volume, so any promotion ROI built on this column needs a proper
+  causal design rather than a comparison.
+
+dunnhumby.rfm_segment_value: |
+  The largest "segment" in this segmentation is the empty label: 1,699 households,
+  67.96% of the panel, carrying 3,559,746.82 and 44.18% of panel value.
+
+  That is not a segment, it is the absence of one. Those 1,699 households are
+  exactly the households with no demographic record, because the segment label
+  comes from the demographic file. The described households are split across
+  `Level1` to `Level12`, and they are far more valuable: `Level12` averages
+  10,789.90 per household and `Level9` 8,394.84, against 2,095.20 for the
+  undescribed group.
+
+  So any RFM segment report built on this table silently analyses only the
+  described minority of the panel while appearing to cover all of it. The segment
+  has to be treated as missing, not as a category.
+
+m5.demand_scale_by_hierarchy: |
+  M5 is small on the shelf and enormous in volume. `FOODS_3` alone carries 32,937,002
+  units - 49.21% of everything in the dataset - from 823 items. At the other end
+  `HOBBIES_2` contributes 541,642 units, 0.81%, from 149 items.
+
+  A model evaluated on pooled data will be dominated by `FOODS_3` regardless of
+  its error, which is the standard argument for scoring these series per
+  department rather than on a single global mean absolute percentage error.
+
+m5.store_comparison: |
+  This version of M5 has ten stores, not the three that most write-ups describe.
+  All of them carry exactly 3,049 series, so the comparison is genuinely
+  like-for-like and the ranking is about store size rather than about which
+  products happen to sit in each store.
+
+  The spread is large: `CA_3` takes 16.98% of all units while `CA_4` takes 6.25%,
+  nearly three times less on an identical series list. "Walmart demand" is
+  meaningless without naming the store, and a forecast trained across all ten
+  will be dominated by whichever two happen to be busiest.
+
+m5.weekday_seasonality: |
+  Saturday is the strongest trading day at 41,706 units averaged, 17.32% of all
+  volume, with Sunday immediately behind on 41,304. The quietest day is Wednesday
+  at 30,130, and Thursday at 30,321 is nearly identical.
+
+  The Saturday-to-Wednesday gap is roughly a third, which is the single largest
+  repeatable effect in the data and the first feature any forecaster should
+  encode. M5 numbers weekdays from 1 = Saturday, not from Monday, so an encoding
+  that assumes 1 = Monday will be shifted by six days.
+
+m5.yearly_trend: |
+  Total units rise steadily: 8,856,585 in 2011 to 13,800,811 in 2015, with average
+  daily demand going from 26,281 to 37,810.
+
+  2016 shows a higher daily average (41,835) than 2015, which is an artifact and
+  not an acceleration: it contributes only 143 days of the calendar and ends in
+  May, so it is a partial year. It is also why the window ends in June rather
+  than December.
+
+m5.event_day_impact: |
+  Holidays do not lift total demand in this data. The 158 days carrying an event
+  flag average 33,030 units against 34,609 on the 1,783 ordinary days - a ratio
+  of 0.96, i.e. event days run BELOW average.
+
+  That is counterintuitive for a retail calendar and it is worth stating plainly:
+  a model that simply adds a "is_holiday" feature will not learn a positive
+  effect from this data. The real holiday effect in M5 is usually in the product
+  mix (toys and confectionery before Christmas) rather than in the total, which
+  is a different query.
+
+m5.intermittency: |
+  This is the number that should drive the choice of forecasting method. Of
+  59,181,090 series-days, 40,241,819 recorded zero units - 68.00%.
+
+  The mean is therefore 1.131 units per series-day, but on the 18,939,271 days
+  that actually sold, the average is 3.534, more than three times higher. The
+  largest single day in the whole dataset is 763 units.
+
+  Any model that predicts a smooth positive number every day will be wrong on
+  two days in three, and will be systematically wrong in the same direction:
+  over-predicting on the silent days. Intermittent-demand methods (Croston and
+  its relatives) or a two-stage classify-then-count design are the appropriate
+  starting point, and plain exponential smoothing on the level is not.
+
+m5.intermittency_by_series: |
+  Intermittency is not uniform, and an aggregate percentage hides that. 5,133
+  series (16.84%) fall in the `silent 90%+ of days` band, and between them they
+  contribute only 838,027 units - 1.25% of all volume. A further 11,591 series
+  (38.02%) are in `silent 70-89% of days` and carry 10.88% of volume.
+
+  At the other end, 4,156 series (13.63%) sell something on most days and
+  contribute 55.70% of all units.
+
+  So a sixth of the series produce about a percent of the demand while a seventh
+  of them produce over half. Segmenting the panel by intermittency before fitting
+  anything will matter far more than tuning a single model across all of them.
+
+m5.price_and_demand: |
+  Price and volume are strongly inversely related, which is what a cross-category
+  view of a retailer looks like. Weeks in the `under 1` band average 25.11 units;
+  `1 to 3`, 13.33; `3 to 5`, 6.74; `5 to 10`, 4.58; and `10 and over`, 3.41.
+
+  Two cautions. This is a correlation across different products - cheap staples
+  sell more than expensive durables because they ARE different products, so it
+  says nothing about the elasticity of any single item. And the share of weeks
+  with no sales rises with price too, from 18.74% in the cheapest band to 32.25%
+  in the dearest, which is a second reason not to read a demand curve into this
+  table. Per-item price-change analysis is a different query.
